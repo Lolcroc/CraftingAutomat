@@ -1,0 +1,16 @@
+[
+{
+  "modid": "craftingautomat",
+  "name": "Crafting Automat",
+  "description": "A vanilla-esque autocrafter",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Lolcroc"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
