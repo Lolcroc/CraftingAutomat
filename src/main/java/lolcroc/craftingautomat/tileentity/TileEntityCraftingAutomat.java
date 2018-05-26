@@ -508,7 +508,7 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 		    	NonNullList<ItemStack> remainingItems = this.getRecipe().getRemainingItems(this.craftMatrix);
 		    	List<ItemStack> reducedStacks = this.getFilledSlots().stream().map(remainingItems::get).collect(Collectors.toList());
 		    	
-	    		if (this.itemHelper.canCraft(this.getRecipe(), intlist)) {
+	    		if (this.itemHelper.canCraft(this.getRecipe(), intlist) && !this.getRecipe().isDynamic()) {
 	    			slots = this.craftFromBuffer(intlist);
 	    		}
 	    		else {
