@@ -18,8 +18,7 @@ public class ContainerCraftingAutomat extends Container {
     public final TileEntityCraftingAutomat inventory;
     private final EntityPlayer player;
     
-    private int progress;
-    private int maxProgress;
+    private int ticksActive;
     
     public ContainerCraftingAutomat(InventoryPlayer playerInventory, TileEntityCraftingAutomat crafterInventory) {
     	this.inventory = crafterInventory;
@@ -69,19 +68,13 @@ public class ContainerCraftingAutomat extends Container {
         {
             IContainerListener icontainerlistener = this.listeners.get(i);
 
-            if (this.progress != this.inventory.getField(0))
+            if (this.ticksActive != this.inventory.getField(0))
             {
                 icontainerlistener.sendWindowProperty(this, 0, this.inventory.getField(0));
             }
-
-            if (this.maxProgress != this.inventory.getField(1))
-            {
-                icontainerlistener.sendWindowProperty(this, 1, this.inventory.getField(1));
-            }
         }
 
-        this.progress = this.inventory.getField(0);
-        this.maxProgress = this.inventory.getField(1);
+        this.ticksActive = this.inventory.getField(0);
     }
     
     @SideOnly(Side.CLIENT)
@@ -125,17 +118,28 @@ public class ContainerCraftingAutomat extends Container {
                 }
 
                 slot.onSlotChange(itemstack1, itemstack);
-                //System.out.println("test");
+            }
+            else if (index >= 1 && index < 10) {
+            	// Merge matrix to buffer, then to full player inv
+            	if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 19, 55, true)) {
+            		return ItemStack.EMPTY;
+            	}
             }
             else if (index >= 10 && index < 19) {
-            	// Merge crafting buffer to player inv
+            	// Merge buffer to full player inv
             	if (!this.mergeItemStack(itemstack1, 19, 55, true)) {
                     return ItemStack.EMPTY;
                 }
             }
-            else if (!this.mergeItemStack(itemstack1, 10, 19, false)) {
-            	// Merge the crafting matrix [1-10> AND player inv [19-55> to the buffer [10-19>
-                return ItemStack.EMPTY;
+            else if (index >= 19 && index < 46) {
+            	// Merge player inv to buffer, then to hotbar
+            	if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 46, 55, false)) {
+            		return ItemStack.EMPTY;
+            	}
+            }
+            else if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 19, 46, false)) {
+            	// Merge hotbar to buffer, then to player inv
+            	return ItemStack.EMPTY;
             }
 
             if (itemstack1.isEmpty()) {
@@ -145,16 +149,13 @@ public class ContainerCraftingAutomat extends Container {
                 slot.onSlotChanged();
             }
 
-            if (itemstack1.getCount() == itemstack.getCount())
-            {
+            if (itemstack1.getCount() == itemstack.getCount()) {
                 return ItemStack.EMPTY;
             }
 
             ItemStack itemstack2 = slot.onTake(playerIn, itemstack1);
 
-            if (index == 0)
-            {
-            	//TODO dispense the item ???
+            if (index == 0) {
                 playerIn.dropItem(itemstack2, false);
             }
         }

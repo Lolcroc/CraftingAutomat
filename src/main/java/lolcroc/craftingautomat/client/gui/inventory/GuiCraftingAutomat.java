@@ -28,9 +28,16 @@ public class GuiCraftingAutomat extends GuiContainer {
 	}
 	
     private int getProgressWidth(int width) {
-        int prog = this.inventory.getField(0);
-        int max = this.inventory.getField(1);
-        return max != 0 && prog != 0 ? prog * width / max : 0;
+        int ticks = this.inventory.getField(0);
+        if (ticks == 0) {
+        	return 0; // Easy return
+        }
+        else if (ticks > TileEntityCraftingAutomat.CRAFTING_TICKS) {
+        	return (TileEntityCraftingAutomat.COOLDOWN_TICKS + TileEntityCraftingAutomat.CRAFTING_TICKS - ticks) * width / TileEntityCraftingAutomat.COOLDOWN_TICKS;
+        }
+        else {
+        	return ticks * width / TileEntityCraftingAutomat.CRAFTING_TICKS;
+        }
     }
 	
 	@Override

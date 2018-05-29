@@ -15,6 +15,7 @@ import lolcroc.craftingautomat.block.BlockCraftingAutomat;
 import lolcroc.craftingautomat.inventory.ContainerCraftingAutomat;
 import lolcroc.craftingautomat.inventory.InventoryAutoCrafting;
 import net.minecraft.block.BlockSourceImpl;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.util.RecipeItemHelper;
 import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
 import net.minecraft.dispenser.IBlockSource;
@@ -61,8 +62,8 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 	private static final int[] SLOTS_BUFFER = IntStream.range(10, 19).toArray();
 	private static final int[] SLOTS_BUFFER_REV = IntStream.range(10, 19).map(i -> 28 - i).toArray();
 	
-	private static final int CRAFTING_TICKS = 8;
-	private static final int COOLDOWN_TICKS = 16;
+	public static final int CRAFTING_TICKS = 8;
+	public static final int COOLDOWN_TICKS = 16;
 
 	private NonNullList<ItemStack> buffer = NonNullList.<ItemStack>withSize(9, ItemStack.EMPTY);;
 	public InventoryCrafting craftMatrix = new InventoryAutoCrafting();
@@ -72,16 +73,18 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 	private RecipeHelper recipeHelper;
 	private final DispenseHelper dispenseHelper = new DispenseHelper();
 	
-	private boolean onCooldown;
-	private int progress;
-	private int maxProgress;
+	private int ticksActive;
 
 	public TileEntityCraftingAutomat() {
 		this.recipeHelper = new RecipeHelper(this, this.craftResult, this.craftMatrix);
 	}
 	
-	public boolean canCraft() {
-		return this.recipeHelper.hasRecipe() && !this.onCooldown && this.progress == 0;
+	public boolean hasRecipe() {
+		return this.recipeHelper.hasRecipe();
+	}
+	
+	public boolean tryCraft(@Nullable EntityPlayer player) {
+		return this.recipeHelper.tryCraft(player);
 	}
 	
 	public int getRecipeCount() {
@@ -89,7 +92,7 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 	}
 	
 	public void dispense(ItemStack itemstack, boolean silent) {
-		EnumFacing enumfacing = (EnumFacing)this.world.getBlockState(this.pos).getValue(BlockCraftingAutomat.FACING);
+		EnumFacing enumfacing = this.getOutputFace();
 		BlockPos blockpos = this.pos.offset(enumfacing);
 		IInventory iinventory = TileEntityHopper.getInventoryAtPosition(this.world, (double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ());
 		BlockSourceImpl blocksrc = new BlockSourceImpl(this.world, this.pos);
@@ -118,48 +121,27 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 		}
 	}
 	
-	public void initiateCrafting() {
-		this.maxProgress = CRAFTING_TICKS;
-	}
-	
-	public boolean tryCraft(@Nullable EntityPlayer player) {
-		return this.recipeHelper.tryCraft(player);
+	@Override
+	public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newState) {
+		return oldState.getBlock() != newState.getBlock();
 	}
 	
 	@Override
 	public void update() {
-		if (this.world.isRemote) {
+		if (!this.hasWorld() || this.world.isRemote || !BlockCraftingAutomat.isActive(this.getBlockMetadata())) {
 			return;
 		}
 		
-		if (this.onCooldown) {
-			if (this.progress == 0) {
-				this.maxProgress = 0;
-				this.onCooldown = false;
-				return;
-			}
-			
-			this.progress--;
+		this.ticksActive++;
+		
+		if ((this.ticksActive <= CRAFTING_TICKS && !this.hasRecipe()) || this.ticksActive >= CRAFTING_TICKS + COOLDOWN_TICKS) {
+			this.ticksActive = 0;
+			this.world.setBlockState(this.pos, this.world.getBlockState(this.pos).withProperty(BlockCraftingAutomat.ACTIVE, Boolean.valueOf(false)), 2);
 		}
-		else if (this.maxProgress > 0) {
-			if (!this.recipeHelper.hasRecipe()) {
-				this.maxProgress = 0;
-				this.progress = this.maxProgress;
-				return;
-			}
-			
-			if (this.progress == this.maxProgress) {
-				this.tryCraft(null);
-				this.dispenseResult();
-				this.markDirty();
-				
-				this.maxProgress = COOLDOWN_TICKS;
-				this.progress = this.maxProgress - 2; //-1 To correct for 16 ticks down, -1 to make a cycle 23 game ticks (for cont. cycles)
-				this.onCooldown = true;
-				return;
-			}
-			
-			this.progress++;
+		else if (this.ticksActive == CRAFTING_TICKS) {
+			this.tryCraft(null);
+			this.dispenseResult();
+			this.markDirty();
 		}
 	}
 
@@ -201,7 +183,13 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 			return this.craftMatrix.decrStackSize(index - 1, count);
 		}
 		else {
-			return ItemStackHelper.getAndSplit(this.buffer, index - 10, count);
+			ItemStack stack = ItemStackHelper.getAndSplit(this.buffer, index - 10, count);
+			
+			if (!stack.isEmpty()) {
+				this.markDirty();
+			}
+			
+			return stack;
 		}
 	}
 
@@ -214,7 +202,13 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 			return this.craftMatrix.removeStackFromSlot(index - 1);
 		}
 		else {
-			return ItemStackHelper.getAndRemove(this.buffer, index - 10);
+			ItemStack stack = ItemStackHelper.getAndRemove(this.buffer, index - 10);
+			
+			if (!stack.isEmpty()) {
+				this.markDirty();
+			}
+			
+			return stack;
 		}
 	}
 
@@ -229,6 +223,7 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 		else {
 			if (index - 10 >= 0 && index - 10 < this.buffer.size()) {
 				this.buffer.set(index - 10, stack);
+				this.markDirty();
 			}
 		}
 	}
@@ -286,30 +281,17 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 
 	@Override
 	public int getField(int id) {
-		switch (id) {
-            case 0:
-                return this.progress;
-            case 1:
-                return this.maxProgress;
-            default:
-                return 0;
-        }
+		return this.ticksActive;
 	}
 
 	@Override
 	public void setField(int id, int value) {
-        switch (id) {
-            case 0:
-                this.progress = value;
-                break;
-            case 1:
-            	this.maxProgress = value;
-        }
+        this.ticksActive = value;
 	}
 
 	@Override
 	public int getFieldCount() {
-		return 2;
+		return 1;
 	}
 
 	@Override
@@ -340,7 +322,7 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 
 	@Override
 	public int[] getSlotsForFace(EnumFacing side) {
-		if (side == EnumFacing.NORTH) {
+		if (side == this.getOutputFace()) {
 			return SLOTS_RESULT;
 		}
 		else {
@@ -363,9 +345,7 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 			this.customName = compound.getString("CustomName");
 		}
 
-		this.onCooldown = compound.getBoolean("Triggered");
-        this.progress = compound.getInteger("Progress");
-        this.maxProgress = compound.getInteger("MaxProgress");
+		this.ticksActive = compound.getInteger("TicksActive");
 		this.markDirty();
 	}
 
@@ -385,9 +365,7 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 			compound.setString("CustomName", this.customName);
 		}
 
-		compound.setBoolean("Triggered", this.onCooldown);
-        compound.setInteger("Progress", (short) this.progress);
-        compound.setInteger("MaxProgress", (short) this.maxProgress);
+		compound.setInteger("TicksActive", (short) this.ticksActive);
 
 		return compound;
 	}
@@ -399,12 +377,17 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 
 	@Override
 	public boolean canExtractItem(int index, ItemStack stack, EnumFacing direction) {
-		return direction != EnumFacing.NORTH;
+		return direction != this.getOutputFace();
 	}
 	
 	@Override
 	public void onLoad() {
 		this.markDirty();
+	}
+	
+	private EnumFacing getOutputFace() {
+		IBlockState state = this.world.getBlockState(this.pos);
+		return state.getBlock() instanceof BlockCraftingAutomat ? state.getValue(BlockCraftingAutomat.FACING) : EnumFacing.NORTH;
 	}
 	
     public int findSlot(ItemStack stack) {
@@ -428,17 +411,27 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
     	return ItemStack.areItemsEqual(stack1, stack2) && ItemStack.areItemStackTagsEqual(stack1, stack2);
     }
 	
-    IItemHandler handlerResult = new SidedInvWrapper(this, net.minecraft.util.EnumFacing.NORTH);
+    IItemHandler handlerResult;
     IItemHandler handlerBufferRev = new SidedInvWrapper(this, net.minecraft.util.EnumFacing.DOWN);
-    IItemHandler handlerBuffer = new SidedInvWrapper(this, net.minecraft.util.EnumFacing.SOUTH);
+    IItemHandler handlerBuffer = new SidedInvWrapper(this, net.minecraft.util.EnumFacing.UP);
 
+    private IItemHandler getOutputWrapper() {
+    	IItemHandler temp = new SidedInvWrapper(this, this.getOutputFace());
+    	
+    	if (this.handlerResult == null || !this.handlerResult.equals(temp)) {
+    		this.handlerResult = temp;
+    	}
+    	
+    	return this.handlerResult;
+    }
+    
     @SuppressWarnings("unchecked")
     @Override
     @Nullable
     public <T> T getCapability(Capability<T> capability, @Nullable EnumFacing facing) {
         if (facing != null && capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY) {
-            if (facing == EnumFacing.NORTH) {
-                return (T) this.handlerResult;
+            if (facing == this.getOutputFace()) {
+                return (T) this.getOutputWrapper();
             }
             else if (facing == EnumFacing.DOWN) {
                 return (T) this.handlerBufferRev;
@@ -448,6 +441,11 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
             }
         }
         return super.getCapability(capability, facing);
+    }
+    
+    @Override
+    public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
+        return capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY || super.hasCapability(capability, facing);
     }
 
 	private class DispenseHelper extends BehaviorDefaultDispenseItem {

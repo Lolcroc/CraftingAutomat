@@ -1,11 +1,9 @@
-{
-  "modListVersion": 2,
-  "modList": [
+[
   {
     "modid": "craftingautomat",
     "name": "Crafting Automat",
     "description": "A vanilla-esque autocrafter",
-    "version": "1.0.1",
+    "version": "${version}",
     "mcversion": "${mcversion}",
     "url": "https://minecraft.curseforge.com/projects/crafting-automat",
     "updateUrl": "",
@@ -14,19 +12,5 @@
     "logoFile": "extra/craftingautomat/logo.png",
     "screenshots": [],
     "dependencies": []
-  },
-  {
-    "modid": "bettertrinkets",
-    "name": "Better Trinkets",
-    "description": "What vanilla trinkets could have been, and a bit more.",
-    "version": "1.0.0",
-    "mcversion": "${mcversion}",
-    "url": "https://github.com/Lolcroc/ProjectLepton",
-    "updateUrl": "",
-    "authorList": ["Lolcroc"],
-    "credits": "",
-    "logoFile": "",
-    "screenshots": [],
-    "dependencies": []
-  }]
-}
+  }
+]

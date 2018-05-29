@@ -7,8 +7,10 @@ import lolcroc.craftingautomat.tileentity.TileEntityCraftingAutomat;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.BlockHorizontal;
+import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyBool;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
@@ -38,13 +40,17 @@ public class BlockCraftingAutomat extends BlockContainer {
 	
 	public static final ResourceLocation DEFAULT = new ResourceLocation(CraftingAutomat.MODID, NAME);
 	public static final PropertyDirection FACING = BlockHorizontal.FACING;
+	public static final PropertyBool ACTIVE = PropertyBool.create("active");
 
 	public BlockCraftingAutomat() {
 		super(Material.ROCK);
 		this.setUnlocalizedName(DEFAULT.toString());
 		this.setRegistryName(DEFAULT);
-        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
+        this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH).withProperty(ACTIVE, Boolean.valueOf(false)));
         this.setCreativeTab(CreativeTabs.REDSTONE);
+        this.setHardness(3.5F);
+        this.setResistance(5.0F);
+        this.setSoundType(SoundType.STONE);
 	}
 
 	@Override
@@ -55,7 +61,7 @@ public class BlockCraftingAutomat extends BlockContainer {
 
 	@Override
 	public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
-        return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
+        return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite()).withProperty(ACTIVE, Boolean.valueOf(false));
 	}
 	
 	private void setDefaultFacing(World worldIn, BlockPos pos, IBlockState state)
@@ -85,7 +91,7 @@ public class BlockCraftingAutomat extends BlockContainer {
 				enumfacing = EnumFacing.WEST;
 			}
 
-			worldIn.setBlockState(pos, state.withProperty(FACING, enumfacing), 2);
+			worldIn.setBlockState(pos, state.withProperty(FACING, enumfacing).withProperty(ACTIVE, Boolean.valueOf(false)), 2);
 		}
 	}
 	
@@ -123,19 +129,26 @@ public class BlockCraftingAutomat extends BlockContainer {
 	
     @Override
     public IBlockState getStateFromMeta(int meta) {
-        EnumFacing enumfacing = EnumFacing.getFront(meta);
+        EnumFacing enumfacing = EnumFacing.getFront(meta & 7);
 
         if (enumfacing.getAxis() == EnumFacing.Axis.Y)
         {
             enumfacing = EnumFacing.NORTH;
         }
 
-        return this.getDefaultState().withProperty(FACING, enumfacing);
+        return this.getDefaultState().withProperty(FACING, enumfacing).withProperty(ACTIVE, Boolean.valueOf(isActive(meta)));
     }
 
     @Override
     public int getMetaFromState(IBlockState state) {
-        return ((EnumFacing)state.getValue(FACING)).getIndex();
+        int i = 0;
+        i = i | state.getValue(FACING).getIndex();
+        
+        if (state.getValue(ACTIVE).booleanValue()) {
+        	i |= 8;
+        }
+        
+        return i;
     }
 	
     @Override
@@ -150,7 +163,7 @@ public class BlockCraftingAutomat extends BlockContainer {
 	
 	@Override
 	protected BlockStateContainer createBlockState() {
-		return new BlockStateContainer(this, new IProperty[] {FACING});
+		return new BlockStateContainer(this, new IProperty[] {FACING, ACTIVE});
 	}
 
 	@Override
@@ -173,14 +186,14 @@ public class BlockCraftingAutomat extends BlockContainer {
 	
 	@Override
     public void neighborChanged(IBlockState state, World worldIn, BlockPos pos, Block blockIn, BlockPos fromPos) {
-        boolean pow = worldIn.isBlockPowered(pos) || worldIn.isBlockPowered(pos.up());
         TileEntity tileentity = worldIn.getTileEntity(pos);
-        
-        if (tileentity instanceof TileEntityCraftingAutomat) {
+		if (tileentity instanceof TileEntityCraftingAutomat) {
         	TileEntityCraftingAutomat teca = (TileEntityCraftingAutomat) tileentity;
+    		boolean pow = worldIn.isBlockPowered(pos) || worldIn.isBlockPowered(pos.up());
+            boolean active = ((Boolean)state.getValue(ACTIVE)).booleanValue();
         	
-        	if (!worldIn.isRemote && pow && teca.canCraft()) {
-                teca.initiateCrafting();
+        	if (!worldIn.isRemote && pow && !active && teca.hasRecipe()) {
+        		worldIn.setBlockState(pos, state.withProperty(ACTIVE, Boolean.valueOf(true)), 2);
             }
         }
     }
@@ -215,6 +228,10 @@ public class BlockCraftingAutomat extends BlockContainer {
         return new PositionImpl(d0, d1, d2);
     }
 
+    public static boolean isActive(int meta) {
+    	return (meta & 8) > 0;
+    }
+    
     @Override
     public boolean hasComparatorInputOverride(IBlockState state) {
         return true;

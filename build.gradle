@@ -11,9 +11,18 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 //Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 
 
-version = "1.0.0.0"
+version = "1.0.3"
 group = "lolcroc.craftingautomat" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "craftingautomat"
+
+jar {
+    exclude("lolcroc/bettertrinkets/**")
+    exclude("assets/bettertrinkets/**")
+    exclude("extra/bettertrinkets/**")
+    exclude("lolcroc/bouncypistons/**")
+    exclude("assets/bouncypistons/**")
+    exclude("extra/bouncypistons/**")
+}
 
 sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 compileJava {
@@ -65,7 +74,7 @@ processResources {
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
-                
+
         // replace version and mcversion
         expand 'version':project.version, 'mcversion':project.minecraft.version
     }
