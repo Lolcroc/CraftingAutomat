@@ -506,14 +506,13 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 		    	NonNullList<ItemStack> remainingItems = this.getRecipe().getRemainingItems(this.craftMatrix);
 		    	List<ItemStack> reducedStacks = this.getFilledSlots().stream().map(remainingItems::get).collect(Collectors.toList());
 		    	
-	    		if (this.itemHelper.canCraft(this.getRecipe(), intlist) && !this.getRecipe().isDynamic()) {
+		    	// Added redunant check because of weird shenanigans
+	    		if (this.itemHelper.canCraft(this.getRecipe(), intlist) && this.itemHelper.getBiggestCraftableStack(this.getRecipe(), new IntArrayList()) > 0 && !this.getRecipe().isDynamic()) {
 	    			slots = this.craftFromBuffer(intlist);
 	    		}
 	    		else {
 	    			slots = this.craftFromMatrix();
 	    		}
-	    		
-	    		this.handleContainerItems(slots.iterator(), reducedStacks.iterator(), player);
 	    	}
 	    	
 	    	return this.hasRecipe();
