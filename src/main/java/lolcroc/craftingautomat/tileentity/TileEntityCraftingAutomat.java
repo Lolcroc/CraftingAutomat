@@ -513,6 +513,8 @@ public class TileEntityCraftingAutomat extends TileEntity implements ITickable, 
 	    		else {
 	    			slots = this.craftFromMatrix();
 	    		}
+	    		
+	    		this.handleContainerItems(slots.iterator(), reducedStacks.iterator(), player);
 	    	}
 	    	
 	    	return this.hasRecipe();
