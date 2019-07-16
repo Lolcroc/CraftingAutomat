@@ -1,10 +1,9 @@
 package lolcroc.craftingautomat.inventory;
 
-import net.minecraft.client.util.RecipeItemHelper;
-import net.minecraft.inventory.Container;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.RecipeItemHelper;
 import net.minecraft.util.NonNullList;
 
 public class InventoryAutoCrafting extends InventoryCrafting {
@@ -64,7 +63,7 @@ public class InventoryAutoCrafting extends InventoryCrafting {
 	@Override
 	public void fillStackedContents(RecipeItemHelper helper) {
 		for (ItemStack itemstack : this.stacks) {
-			helper.accountStack(itemstack);
+			helper.accountPlainStack(itemstack);
 		}
 	}
 

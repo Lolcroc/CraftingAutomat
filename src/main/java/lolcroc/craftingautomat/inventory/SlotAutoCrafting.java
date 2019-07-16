@@ -7,9 +7,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.InventoryCraftResult;
 import net.minecraft.inventory.SlotCrafting;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.util.NonNullList;
 
 public class SlotAutoCrafting extends SlotCrafting {
 
@@ -50,7 +48,7 @@ public class SlotAutoCrafting extends SlotCrafting {
         if (this.amountCrafted > 0)
         {
             stack.onCrafting(this.player.world, this.player, this.amountCrafted);
-            net.minecraftforge.fml.common.FMLCommonHandler.instance().firePlayerCraftingEvent(this.player, stack, this.inventory.craftMatrix);
+            net.minecraftforge.fml.hooks.BasicEventHooks.firePlayerCraftingEvent(this.player, stack, this.inventory.craftMatrix);
         }
 
         this.amountCrafted = 0;

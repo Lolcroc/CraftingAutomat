@@ -2,28 +2,39 @@ package lolcroc.craftingautomat.client;
 
 import lolcroc.craftingautomat.CommonProxy;
 import lolcroc.craftingautomat.CraftingAutomat;
-import lolcroc.craftingautomat.block.BlockCraftingAutomat;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.block.statemap.StateMap;
-import net.minecraft.item.Item;
-import net.minecraftforge.client.event.ModelRegistryEvent;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.Side;
+import lolcroc.craftingautomat.client.gui.inventory.GuiCraftingAutomat;
+import lolcroc.craftingautomat.tileentity.TileEntityCraftingAutomat;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.model.obj.OBJLoader;
+import net.minecraftforge.fml.ExtensionPoint;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.network.FMLPlayMessages;
 
-@EventBusSubscriber(modid = CraftingAutomat.MODID, value = Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class ClientProxy extends CommonProxy {
-
-	public static final String LOCATION = "lolcroc.craftingautomat.client.ClientProxy";
 	
-	@SubscribeEvent
-	public static void registerModels(ModelRegistryEvent event) {
-		Item item = CraftingAutomat.Items.autocrafter;
+	@Override
+	public void setup(FMLCommonSetupEvent event) {
+		OBJLoader.INSTANCE.addDomain(CraftingAutomat.MODID);
+		ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.GUIFACTORY, () -> ClientProxy::openGui);
+	}
 		
-		ModelResourceLocation mrl = new ModelResourceLocation(item.getRegistryName(), "inventory");
-		
-		ModelLoader.setCustomModelResourceLocation(item, 0, mrl);
-		ModelLoader.setCustomStateMapper(CraftingAutomat.Blocks.autocrafter, (new StateMap.Builder()).ignore(BlockCraftingAutomat.ACTIVE).build());
+	public static GuiScreen openGui(FMLPlayMessages.OpenContainer openContainer) {
+		BlockPos pos = openContainer.getAdditionalData().readBlockPos();
+		EntityPlayerSP player = Minecraft.getInstance().player;
+		TileEntity te = Minecraft.getInstance().world.getTileEntity(pos);
+
+		if (te instanceof TileEntityCraftingAutomat) {
+			return new GuiCraftingAutomat(player.inventory, (TileEntityCraftingAutomat) te);
+		}
+
+		return null;
 	}
 }

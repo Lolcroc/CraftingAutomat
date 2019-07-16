@@ -1,17 +1,14 @@
 package lolcroc.craftingautomat.inventory;
 
-import java.lang.reflect.Field;
-
 import lolcroc.craftingautomat.tileentity.TileEntityCraftingAutomat;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IContainerListener;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ContainerCraftingAutomat extends Container {
 	
@@ -26,30 +23,30 @@ public class ContainerCraftingAutomat extends Container {
     	crafterInventory.openInventory(player);
     	
     	// Result slot
-    	this.addSlotToContainer(new SlotAutoCrafting(playerInventory.player, crafterInventory, 0, 124, 35));
+    	this.addSlot(new SlotAutoCrafting(playerInventory.player, crafterInventory, 0, 124, 35));
     	
     	// Crafting matrix
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                this.addSlotToContainer(new Slot(crafterInventory, 1 + j + i * 3, 30 + j * 18, 17 + i * 18));
+                this.addSlot(new Slot(crafterInventory, 1 + j + i * 3, 30 + j * 18, 17 + i * 18));
             }
         }
         
         // Crafting buffer
         for (int l = 0; l < 9; ++l) {
-            this.addSlotToContainer(new Slot(crafterInventory, 10 + l, 8 + l * 18, 84));
+            this.addSlot(new Slot(crafterInventory, 10 + l, 8 + l * 18, 84));
         }
 
         // Player inventory
         for (int k = 0; k < 3; ++k) {
             for (int i1 = 0; i1 < 9; ++i1) {
-                this.addSlotToContainer(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 115 + k * 18));
+                this.addSlot(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 115 + k * 18));
             }
         }
 
         // Player hotbar
         for (int l = 0; l < 9; ++l) {
-            this.addSlotToContainer(new Slot(playerInventory, l, 8 + l * 18, 173));
+            this.addSlot(new Slot(playerInventory, l, 8 + l * 18, 173));
         }
     }
     
@@ -60,16 +57,11 @@ public class ContainerCraftingAutomat extends Container {
     }
     
     @Override
-    public void detectAndSendChanges()
-    {
+    public void detectAndSendChanges() {
         super.detectAndSendChanges();
 
-        for (int i = 0; i < this.listeners.size(); ++i)
-        {
-            IContainerListener icontainerlistener = this.listeners.get(i);
-
-            if (this.ticksActive != this.inventory.getField(0))
-            {
+        for (IContainerListener icontainerlistener : this.listeners) {
+            if (this.ticksActive != this.inventory.getField(0)) {
                 icontainerlistener.sendWindowProperty(this, 0, this.inventory.getField(0));
             }
         }
@@ -77,7 +69,7 @@ public class ContainerCraftingAutomat extends Container {
         this.ticksActive = this.inventory.getField(0);
     }
     
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     @Override
     public void updateProgressBar(int id, int data) {
         this.inventory.setField(id, data);
