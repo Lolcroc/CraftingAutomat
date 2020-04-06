@@ -1,0 +1,7 @@
+{
+    "block.craftingautomat.autocrafter": "Авто-создаватель",
+    "container.craftingautomat:autocrafter": "Создание",
+    "container.craftingautomat:autocrafter.flag.ready": "Авто-создание готово",
+    "container.craftingautomat:autocrafter.flag.missing": "Отсутствуют ингридиенты",
+    "container.craftingautomat:autocrafter.flag.invalid": "Авто-создание не поддерживается"
+}
