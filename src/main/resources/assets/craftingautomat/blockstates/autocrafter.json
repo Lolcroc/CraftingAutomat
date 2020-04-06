@@ -1,11 +1,8 @@
 {
-    "forge_marker": 1,
     "variants": {
-        "normal": { "model": "craftingautomat:autocrafter" },
-        "inventory": { "model": "craftingautomat:autocrafter" },
-        "facing=north": { "model": "craftingautomat:autocrafter" },
-        "facing=south": { "model": "craftingautomat:autocrafter", "y": 180 },
-        "facing=west":  { "model": "craftingautomat:autocrafter", "y": 270 },
-        "facing=east":  { "model": "craftingautomat:autocrafter", "y": 90 }
+        "facing=north": { "model": "craftingautomat:block/autocrafter" },
+        "facing=south": { "model": "craftingautomat:block/autocrafter", "y": 180 },
+        "facing=west":  { "model": "craftingautomat:block/autocrafter", "y": 270 },
+        "facing=east":  { "model": "craftingautomat:block/autocrafter", "y": 90 }
     }
 }

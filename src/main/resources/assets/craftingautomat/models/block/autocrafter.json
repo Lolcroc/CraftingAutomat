@@ -1,12 +1,12 @@
 {
     "parent": "block/cube",
     "textures": {
-        "particle": "craftingautomat:blocks/autocraft_side",
-        "down": "craftingautomat:blocks/autocraft_bottom",
-        "up": "craftingautomat:blocks/autocraft_top",
-        "east": "craftingautomat:blocks/autocraft_side",
-        "west": "craftingautomat:blocks/autocraft_side",
-        "north": "craftingautomat:blocks/autocraft_front",
-        "south": "craftingautomat:blocks/autocraft_back"
+        "particle": "craftingautomat:block/autocraft_lside",
+        "down": "craftingautomat:block/autocraft_bottom",
+        "up": "craftingautomat:block/autocraft_top",
+        "east": "craftingautomat:block/autocraft_lside",
+        "west": "craftingautomat:block/autocraft_rside",
+        "north": "craftingautomat:block/autocraft_front",
+        "south": "craftingautomat:block/autocraft_back"
     }
 }

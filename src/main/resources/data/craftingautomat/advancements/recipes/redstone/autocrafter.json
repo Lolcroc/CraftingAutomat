@@ -1,0 +1,35 @@
+{
+  "parent": "minecraft:recipes/root",
+  "rewards": {
+    "recipes": [
+      "craftingautomat:autocrafter"
+    ]
+  },
+  "criteria": {
+    "has_end_stone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "minecraft:end_stone",
+            "count": {
+              "min": 1
+            }
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "craftingautomat:autocrafter"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_end_stone",
+      "has_the_recipe"
+    ]
+  ]
+}

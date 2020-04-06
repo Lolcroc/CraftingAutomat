@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "group": "minecraft:dropper",
+    "pattern": [
+        "lll", 
+        "ptp",
+        "pdp"
+    ], 
+    "key": {
+        "l": {
+            "item": "minecraft:lapis_lazuli"
+        }, 
+        "p": {
+            "tag": "minecraft:planks"
+        },
+        "t": {
+            "item": "minecraft:crafting_table"
+        },
+        "d": {
+            "item": "minecraft:dropper"
+        }
+    }, 
+    "result": {
+        "item": "craftingautomat:autocrafter"
+    }
+}
