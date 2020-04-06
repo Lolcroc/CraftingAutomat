@@ -17,6 +17,7 @@ import net.minecraft.state.StateContainer;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.stats.Stats;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ResourceLocation;
@@ -85,7 +86,7 @@ public class CraftingAutomatBlock extends Block {
 
 	@SuppressWarnings("deprecation")
 	@Override
-	public boolean onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
+	public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
 		if (!worldIn.isRemote) {
 			TileEntity tileentity = worldIn.getTileEntity(pos);
 
@@ -94,7 +95,7 @@ public class CraftingAutomatBlock extends Block {
 				player.addStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
 			}
 		}
-		return true;
+		return ActionResultType.SUCCESS;
 	}
 
 	@SuppressWarnings("deprecation")

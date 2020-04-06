@@ -1,6 +1,6 @@
 package lolcroc.craftingautomat;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.PlayerInventory;
@@ -49,7 +49,7 @@ public class CraftingAutomatScreen extends ContainerScreen<CraftingAutomatContai
 	
 	@Override
 	protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-		GlStateManager.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+		RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
 		this.minecraft.getTextureManager().bindTexture(TEXTURE);
 		int i = (this.width - this.xSize) / 2;
         int j = (this.height - this.ySize) / 2;
