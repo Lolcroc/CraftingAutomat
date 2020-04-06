@@ -14,7 +14,7 @@ issueTrackerURL="https://github.com/Lolcroc/ProjectLepton/issues" #optional
 # The modid of the mod
 modId="craftingautomat" #mandatory
 # The version number of the mod - there's a few well known ${} variables useable here or just hardcode it
-version="1.2.0" #mandatory
+version="1.2.1" #mandatory
  # A display name for the mod
 displayName="Crafting Automat" #mandatory
 # A URL to query for updates for this mod. See the JSON update specification <here>
@@ -31,12 +31,16 @@ authors="Lolcroc" #optional
 description='''
 A very simple autocrafter!
 
-Changes in 1.2.0:
+Changes as of 1.2.0:
 * New texture and block recipe
 * Auto-crafting keeps the crafting recipe
 * Throws a warning in the GUI if there are insufficient ingredients
 * Redstone behavior mimics the dropper
 * Crafting delay and cooldown have a configuration file
+
+Changed in 1.2.1:
+* Added Russian lang file (courtesy of vanja-san)
+* Added Dutch lang file
 
 Compatible up to MC 1.13.2!
 
