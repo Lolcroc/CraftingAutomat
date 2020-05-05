@@ -1,5 +1,7 @@
 {
     "variants": {
+        "facing=down":  { "model": "craftingautomat:block/autocrafter_down" },
+        "facing=up":    { "model": "craftingautomat:block/autocrafter_up" },
         "facing=north": { "model": "craftingautomat:block/autocrafter" },
         "facing=south": { "model": "craftingautomat:block/autocrafter", "y": 180 },
         "facing=west":  { "model": "craftingautomat:block/autocrafter", "y": 270 },

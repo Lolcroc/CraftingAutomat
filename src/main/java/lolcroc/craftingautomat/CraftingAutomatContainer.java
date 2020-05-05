@@ -15,26 +15,26 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
 public class CraftingAutomatContainer extends Container {
-	
-    public final CraftingAutomatTileEntity tile;
-    protected final IntReferenceHolder ticksHolder;
-    protected final IntReferenceHolder craftingFlagHolder;
+
+    private final CraftingAutomatTileEntity tile;
+    private final IntReferenceHolder ticksHolder;
+    private final IntReferenceHolder craftingFlagHolder;
     
     // Only on client
     public CraftingAutomatContainer(int id, PlayerInventory playerInventory, PacketBuffer extraData) {
-    	this(id, playerInventory, (CraftingAutomatTileEntity) Minecraft.getInstance().world.getTileEntity(extraData.readBlockPos()));
+        this(id, playerInventory, (CraftingAutomatTileEntity) Minecraft.getInstance().world.getTileEntity(extraData.readBlockPos()));
     }
     
     public CraftingAutomatContainer(int id, PlayerInventory playerInventory, CraftingAutomatTileEntity te) {
-    	super(CraftingAutomat.ContainerTypes.autocrafter, id);
-    	this.tile = te;
-    	
-    	// Result slot
+        super(CraftingAutomat.ContainerTypes.autocrafter, id);
+        this.tile = te;
+
+        // Result slot
         te.resultHandler.ifPresent(h -> {
             addSlot(new CraftingAutomatResultSlot(h, playerInventory.player, te, 0, 124, 35));
         });
-    	
-    	// Crafting matrix
+
+        // Crafting matrix
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
                 int finalI = i;
@@ -82,18 +82,18 @@ public class CraftingAutomatContainer extends Container {
         return CraftingAutomatTileEntity.CraftingFlag.fromIndex(craftingFlagHolder.get());
     }
 
-	@Override
-	public boolean canInteractWith(PlayerEntity player) {
+    @Override
+    public boolean canInteractWith(PlayerEntity player) {
         return isWithinUsableDistance(IWorldPosCallable.of(tile.getWorld(), tile.getPos()), player, CraftingAutomat.Blocks.autocrafter);
-	}
-	
-	@Override
+    }
+
+    @Override
     public boolean canMergeSlot(ItemStack stack, Slot slot) {
         return !(slot instanceof CraftingAutomatResultSlot) && super.canMergeSlot(stack, slot);
     }
-	
-	@Override
-	public ItemStack transferStackInSlot(PlayerEntity playerIn, int index)
+
+    @Override
+    public ItemStack transferStackInSlot(PlayerEntity playerIn, int index)
     {
         ItemStack itemstack = ItemStack.EMPTY;
         Slot slot = this.inventorySlots.get(index);
@@ -113,26 +113,26 @@ public class CraftingAutomatContainer extends Container {
                 slot.onSlotChange(itemstack1, itemstack);
             }
             else if (index >= 1 && index < 10) {
-            	// Merge matrix to buffer, then to full player inv
-            	if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 19, 55, true)) {
-            		return ItemStack.EMPTY;
-            	}
+                // Merge matrix to buffer, then to full player inv
+                if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 19, 55, true)) {
+                    return ItemStack.EMPTY;
+                }
             }
             else if (index >= 10 && index < 19) {
-            	// Merge buffer to full player inv
-            	if (!this.mergeItemStack(itemstack1, 19, 55, true)) {
+                // Merge buffer to full player inv
+                if (!this.mergeItemStack(itemstack1, 19, 55, true)) {
                     return ItemStack.EMPTY;
                 }
             }
             else if (index >= 19 && index < 46) {
-            	// Merge player inv to buffer, then to hotbar
-            	if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 46, 55, false)) {
-            		return ItemStack.EMPTY;
-            	}
+                // Merge player inv to buffer, then to hotbar
+                if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 46, 55, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
             else if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 19, 46, false)) {
-            	// Merge hotbar to buffer, then to player inv
-            	return ItemStack.EMPTY;
+                // Merge hotbar to buffer, then to player inv
+                return ItemStack.EMPTY;
             }
 
             if (itemstack1.isEmpty()) {
@@ -156,7 +156,7 @@ public class CraftingAutomatContainer extends Container {
         return itemstack;
     }
 
-    private class SlotItemHandlerUpdatesRecipe extends SlotItemHandler {
+    private static class SlotItemHandlerUpdatesRecipe extends SlotItemHandler {
         private final CraftingAutomatTileEntity tile;
 
         public SlotItemHandlerUpdatesRecipe(CraftingAutomatTileEntity te, IItemHandler itemHandler, int index, int xPosition, int yPosition) {
@@ -172,7 +172,7 @@ public class CraftingAutomatContainer extends Container {
         }
     }
 
-    private class SlotItemHandlerUpdatesHelper extends SlotItemHandler {
+    private static class SlotItemHandlerUpdatesHelper extends SlotItemHandler {
         private final CraftingAutomatTileEntity tile;
 
         public SlotItemHandlerUpdatesHelper(CraftingAutomatTileEntity te, IItemHandler itemHandler, int index, int xPosition, int yPosition) {

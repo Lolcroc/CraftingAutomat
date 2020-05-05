@@ -1,0 +1,12 @@
+{
+    "parent": "block/cube",
+    "textures": {
+        "particle": "craftingautomat:block/autocraft_side_up",
+        "down": "craftingautomat:block/autocraft_bottom",
+        "up": "craftingautomat:block/autocraft_top_up",
+        "east": "craftingautomat:block/autocraft_side_up",
+        "west": "craftingautomat:block/autocraft_side_up",
+        "north": "craftingautomat:block/autocraft_front_up",
+        "south": "craftingautomat:block/autocraft_back_up"
+    }
+}

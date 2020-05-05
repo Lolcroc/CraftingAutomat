@@ -32,13 +32,25 @@ public class ResultHandler extends ItemStackHandler {
         return false;
     }
 
+    // Make this handler 'read-only'
+    @Nonnull
+    @Override
+    public ItemStack extractItem(int slot, int amount, boolean simulate) {
+        return ItemStack.EMPTY;
+    }
+
     protected static void dispense(World world, BlockPos pos, Direction side, ItemStack stack, boolean silent) {
-        double d0 = pos.getX() + 0.5D + 0.7D * (double)side.getXOffset();
-        double d1 = pos.getY() + 0.3D + 0.7D * (double)side.getYOffset();
-        double d2 = pos.getZ() + 0.5D + 0.7D * (double)side.getZOffset();
+        double x = pos.getX() + 0.5D + 0.7D * (double)side.getXOffset();
+        double y = pos.getY() + 0.5D + 0.7D * (double)side.getYOffset();
+        double z = pos.getZ() + 0.5D + 0.7D * (double)side.getZOffset();
+
+        // Lower the dispense position slightly when shooting from the side
+        if (side.getAxis().isHorizontal()) {
+            y -= 0.2D;
+        }
 
         ItemStack itemstack = stack.split(stack.getCount()); //is empty afterwards
-        DefaultDispenseItemBehavior.doDispense(world, itemstack, 6, side, new Position(d0, d1, d2));
+        DefaultDispenseItemBehavior.doDispense(world, itemstack, 6, side, new Position(x, y, z));
 
         if (!silent) {
             world.playEvent(1000, pos, 0); // Play dispense sound
