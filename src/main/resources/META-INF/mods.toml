@@ -31,16 +31,12 @@ authors="Lolcroc" #optional
 description='''
 A very simple autocrafter!
 
-Changes as of 1.2.0:
+Version 1.2 changes:
 * New texture and block recipe
-* Auto-crafting keeps the crafting recipe
-* Throws a warning in the GUI if there are insufficient ingredients
-* Redstone behavior mimics the dropper
+* Smarter auto-crafting
+* Can output to all 6 sides
 * Crafting delay and cooldown have a configuration file
-
-Changed in 1.2.1:
-* Added Russian lang file (courtesy of vanja-san)
-* Added Dutch lang file
+* JEI recipe placement integration
 
 Compatible up to MC 1.13.2!
 

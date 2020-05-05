@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
 public class CraftingAutomat
 {
     public static final String MODID = "craftingautomat";
-    public static final Logger LOGGER = LogManager.getLogger(MODID);
+//    public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     @ObjectHolder(MODID)
     public static class Blocks {
