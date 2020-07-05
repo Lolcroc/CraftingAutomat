@@ -1,5 +1,6 @@
 package lolcroc.craftingautomat;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.resources.I18n;
@@ -27,6 +28,8 @@ public class CraftingAutomatScreen extends ContainerScreen<CraftingAutomatContai
 
         xSize = WIDTH;
         ySize = HEIGHT;
+
+        field_238742_p_ = 28; // Title x
     }
 
     private int getProgressWidth(int width) {
@@ -43,40 +46,34 @@ public class CraftingAutomatScreen extends ContainerScreen<CraftingAutomatContai
         }
     }
 
+    // Background
     @Override
-    protected void drawGuiContainerForegroundLayer(int mouseX, int mouseY)
-    {
-        font.drawString(title.getFormattedText(), 28, 6, 4210752);
-        font.drawString(playerInventory.getDisplayName().getFormattedText(), 8, ySize - 96 + 2, 4210752);
-    }
-
-    @Override
-    protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
-        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-        minecraft.getTextureManager().bindTexture(TEXTURE);
-        int i = (width - xSize) / 2;
-        int j = (height - ySize) / 2;
-        blit(i, j, 0, 0, xSize, ySize);
+    protected void func_230450_a_(MatrixStack stack, float partialTicks, int mouseX, int mouseY) {
+        func_230446_a_(stack);
+        field_230706_i_.getTextureManager().bindTexture(TEXTURE);
+        int i = this.guiLeft;
+        int j = this.guiTop;
+        func_238474_b_(stack, i, j, 0, 0, xSize, ySize); // blit
         
         int w = getProgressWidth(24);
-        blit(i + 89, j + 34, 176, 0, w + 1, 16);
+        func_238474_b_(stack, i + 89, j + 34, 176, 0, w + 1, 16);
 
         // Draw crafting flag marker and tooltip
         CraftingAutomatTileEntity.CraftingFlag flag = container.getCraftingFlag();
         if (flag != CraftingAutomatTileEntity.CraftingFlag.NONE) {
-            blit(i + 142, j + 26, 176 + 8 * (flag.getIndex() - 1), 17, 8, 8);
+            func_238474_b_(stack, i + 142, j + 26, 176 + 8 * (flag.getIndex() - 1), 17, 8, 8);
 
             if (isPointInRegion(142, 26, 8, 8, mouseX, mouseY)) {
-                renderTooltip(I18n.format(flag.getDisplayName().getFormattedText()), mouseX, mouseY);
+                func_238654_b_(stack, flag.getDisplayTags(), mouseX, mouseY); // Tooltip
             }
         }
     }
 
+    // Render
     @Override
-    public void render(int mouseX, int mouseY, float partialTicks) {
-        renderBackground();
-        super.render(mouseX, mouseY, partialTicks);
-        renderHoveredToolTip(mouseX, mouseY);
+    public void func_230430_a_(MatrixStack stack, int mouseX, int mouseY, float partialTicks) {
+        super.func_230430_a_(stack, mouseX, mouseY, partialTicks);
+        func_230459_a_(stack, mouseX, mouseY); // Hovered tooltip
     }
 
 }

@@ -1,5 +1,7 @@
 package lolcroc.craftingautomat;
 
+import com.google.common.collect.Lists;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -39,6 +41,7 @@ import net.minecraftforge.items.wrapper.EmptyHandler;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -62,22 +65,25 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
         }
     };
 
+
     enum CraftingFlag {
         NONE, READY, MISSING, INVALID;
 
-        private final ITextComponent displayName;
+        private final List<ITextComponent> displayTags;
         private static final CraftingFlag[] VALUES = CraftingFlag.values();
 
         CraftingFlag() {
-            displayName = new TranslationTextComponent(toString());
+            List<ITextComponent> list = Lists.newArrayList();
+            list.add((new TranslationTextComponent(toString())).func_240699_a_(TextFormatting.GRAY));
+            displayTags = list;
         }
 
         public int getIndex() {
             return ordinal();
         }
 
-        public ITextComponent getDisplayName() {
-            return displayName.applyTextStyle(TextFormatting.GRAY);
+        public List<ITextComponent> getDisplayTags() {
+            return displayTags;
         }
 
         public static CraftingFlag fromIndex(int idx) {
@@ -222,9 +228,10 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
         this.customName = name;
     }
 
+    // Read NBT
     @Override
-    public void read(CompoundNBT compound) {
-        super.read(compound);
+    public void func_230337_a_(BlockState state, CompoundNBT compound) {
+        super.func_230337_a_(state, compound);
 
         // Backwards compatibility
         if (!compound.getList("Items", 10).isEmpty()) {
@@ -242,7 +249,7 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
         }
 
         if (compound.contains("CustomName", 8)) {
-            customName = ITextComponent.Serializer.fromJson(compound.getString("CustomName"));
+            customName = ITextComponent.Serializer.func_240643_a_(compound.getString("CustomName")); // fromJson
         }
 
         ticksActive = compound.getInt("TicksActive");
