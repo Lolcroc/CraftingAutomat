@@ -64,7 +64,7 @@ public class CraftingAutomatScreen extends ContainerScreen<CraftingAutomatContai
             func_238474_b_(stack, i + 142, j + 26, 176 + 8 * (flag.getIndex() - 1), 17, 8, 8);
 
             if (isPointInRegion(142, 26, 8, 8, mouseX, mouseY)) {
-                func_238654_b_(stack, flag.getDisplayTags(), mouseX, mouseY); // Tooltip
+                func_243308_b(stack, flag.getDisplayTags(), mouseX, mouseY); // Tooltip
             }
         }
     }
