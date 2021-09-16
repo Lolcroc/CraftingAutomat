@@ -1,0 +1,7 @@
+{
+    "block.craftingautomat.autocrafter": "Banco da lavoro automatico",
+    "container.craftingautomat:autocrafter": "Fabbricazione",
+    "container.craftingautomat:autocrafter.flag.ready": "Fabbricazione automatica pronta",
+    "container.craftingautomat:autocrafter.flag.missing": "Ricette mancanti",
+    "container.craftingautomat:autocrafter.flag.invalid": "Fabbricazione automatica non supportata"
+}
