@@ -1,34 +1,33 @@
 package lolcroc.craftingautomat;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.DirectionalBlock;
-import net.minecraft.block.SoundType;
-import net.minecraft.block.material.Material;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.inventory.InventoryHelper;
-import net.minecraft.item.BlockItemUseContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.state.BooleanProperty;
-import net.minecraft.state.DirectionProperty;
-import net.minecraft.state.StateContainer;
-import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ActionResultType;
-import net.minecraft.util.Direction;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.world.IBlockReader;
-import net.minecraft.world.IWorldReader;
-import net.minecraft.world.World;
+import net.minecraft.world.Containers;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.material.Material;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
-import net.minecraftforge.fml.network.NetworkHooks;
+import net.minecraftforge.fmllegacy.network.NetworkHooks;
 import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
@@ -36,7 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class CraftingAutomatBlock extends Block {
+public class CraftingAutomatBlock extends BaseEntityBlock {
 
     public static final String NAME = "autocrafter";
 
@@ -50,120 +49,122 @@ public class CraftingAutomatBlock extends Block {
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     public CraftingAutomatBlock() {
-        super(Properties.create(Material.ROCK).sound(SoundType.STONE).hardnessAndResistance(3.5F));
+        // RedstoneConductor : Prevents incoming redstone signals to propagate to adjacent blocks
+        super(BlockBehaviour.Properties.of(Material.STONE).sound(SoundType.STONE)
+                .strength(3.5F).isRedstoneConductor((state, getter, pos) -> false));
         this.setRegistryName(REGISTRY_NAME);
-        this.setDefaultState(this.stateContainer.getBaseState()
-                .with(FACING, Direction.NORTH)
-                .with(ACTIVE, Boolean.FALSE)
-                .with(TRIGGERED, Boolean.FALSE));
+        this.registerDefaultState(stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(ACTIVE, Boolean.FALSE)
+                .setValue(TRIGGERED, Boolean.FALSE));
     }
 
     @Override
-    protected void fillStateContainer(StateContainer.Builder<Block, BlockState> builder) {
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, ACTIVE, TRIGGERED);
     }
 
-    @Override
-    public boolean hasTileEntity(BlockState state) {
-        return true;
+    @Nullable
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new CraftingAutomatTileEntity(pos, state);
+    }
+
+    @Nullable
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide || !state.getValue(ACTIVE) ? null : createTickerHelper(type, CraftingAutomat.BlockEntityTypes.autocrafter, CraftingAutomatTileEntity::serverTick);
     }
 
     @Override
-    public TileEntity createTileEntity(BlockState state, IBlockReader worldIn) {
-        return new CraftingAutomatTileEntity();
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getNearestLookingDirection().getOpposite());
     }
 
-    @Override
-    public BlockState getStateForPlacement(BlockItemUseContext context) {
-        return this.getDefaultState().with(FACING, context.getNearestLookingDirection().getOpposite());
-    }
 
     @Override
-    public void onBlockPlacedBy(World worldIn, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-        if (stack.hasDisplayName()) {
-            safeConsume(worldIn, pos, t -> t.setCustomName(stack.getDisplayName()));
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity entity, ItemStack stack) {
+        if (stack.hasCustomHoverName()) {
+            safeConsume(level, pos, t -> t.setCustomName(stack.getDisplayName()));
         }
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public ActionResultType onBlockActivated(BlockState state, World worldIn, BlockPos pos, PlayerEntity player, Hand handIn, BlockRayTraceResult hit) {
-        if (!worldIn.isRemote) {
-            safeConsume(worldIn, pos, t -> {
-                NetworkHooks.openGui((ServerPlayerEntity) player, t, pos);
-                player.addStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide) {
+            safeConsume(level, pos, t -> {
+                NetworkHooks.openGui((ServerPlayer) player, t, pos);
+                player.awardStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
             });
         }
-        return ActionResultType.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public void neighborChanged(BlockState state, World world, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
-        safeConsume(world, pos, t -> {
-            boolean pow = world.isBlockPowered(pos) || world.isBlockPowered(pos.up());
-            boolean triggered = state.get(TRIGGERED);
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block blockIn, BlockPos fromPos, boolean isMoving) {
+        safeConsume(level, pos, t -> {
+            boolean pow = level.hasNeighborSignal(pos) || level.hasNeighborSignal(pos.above());
+            boolean triggered = state.getValue(TRIGGERED);
             if (pow && !triggered) {
-                BlockState newstate = state.with(TRIGGERED, Boolean.TRUE);
+                BlockState newstate = state.setValue(TRIGGERED, Boolean.TRUE);
                 // Below statement takes the role of scheduleTick in DispenserBlock
-                if (!state.get(ACTIVE)) newstate = newstate.with(ACTIVE, t.isReady());
-                world.setBlockState(pos, newstate, 4);
+                if (!state.getValue(ACTIVE)) newstate = newstate.setValue(ACTIVE, t.isReady());
+                level.setBlock(pos, newstate, 4);
             }
             else if (!pow && triggered) {
-                world.setBlockState(pos, state.with(TRIGGERED, Boolean.FALSE), 4);
+                level.setBlock(pos, state.setValue(TRIGGERED, Boolean.FALSE), 4);
             }
         });
 
-        super.neighborChanged(state, world, pos, blockIn, fromPos, isMoving);
+        super.neighborChanged(state, level, pos, blockIn, fromPos, isMoving);
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public void onReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean isMoving) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock()) {
-            safeConsume(world, pos, t -> {
+            safeConsume(level, pos, t -> {
                 t.getCapability(ITEM_HANDLER_CAPABILITY).ifPresent(h -> {
                     for (int i = 0; i < h.getSlots(); i++) {
-                        InventoryHelper.spawnItemStack(world, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), h.getStackInSlot(i));
+                        Containers.dropItemStack(level, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), h.getStackInSlot(i));
                     }
                 });
             });
-            world.updateComparatorOutputLevel(pos, this);
+            level.updateNeighbourForOutputSignal(pos, this);
 
-            super.onReplaced(state, world, pos, newState, isMoving);
+            super.onRemove(state, level, pos, newState, isMoving);
         }
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public boolean hasComparatorInputOverride(BlockState state) {
+    public boolean hasAnalogOutputSignal(BlockState state) {
         return true;
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public int getComparatorInputOverride(BlockState blockState, World worldIn, BlockPos pos) {
-        return safeFunc(worldIn, pos, t -> {
+    public int getAnalogOutputSignal(BlockState blockState, Level level, BlockPos pos) {
+        return safeFunc(level, pos, t -> {
             int count = t.getRecipeCount();
             return count != 0 ? (int) (Math.log(count) / Math.log(2)) + 1 : 0;
         }, () -> 0);
     }
 
-    // Prevents incoming redstone signals to propagate to adjacent blocks
-    @Override
-    public boolean shouldCheckWeakPower(BlockState state, IWorldReader world, BlockPos pos, Direction side) {
-        return false;
-    }
-
-    private static void safeConsume(World world, BlockPos pos, Consumer<CraftingAutomatTileEntity> c) {
-        TileEntity tile = world.getTileEntity(pos);
+    private static void safeConsume(Level level, BlockPos pos, Consumer<CraftingAutomatTileEntity> c) {
+        BlockEntity tile = level.getBlockEntity(pos);
         if (tile instanceof CraftingAutomatTileEntity) {
             c.accept((CraftingAutomatTileEntity) tile);
         }
     }
 
-    private static <T> T safeFunc(World world, BlockPos pos, Function<CraftingAutomatTileEntity, T> f, Supplier<T> other) {
-        TileEntity tile = world.getTileEntity(pos);
+    private static <T> T safeFunc(Level level, BlockPos pos, Function<CraftingAutomatTileEntity, T> f, Supplier<T> other) {
+        BlockEntity tile = level.getBlockEntity(pos);
         return tile instanceof CraftingAutomatTileEntity ? f.apply((CraftingAutomatTileEntity) tile) : other.get();
     }
 }

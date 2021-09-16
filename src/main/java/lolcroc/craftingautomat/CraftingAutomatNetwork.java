@@ -1,13 +1,13 @@
 package lolcroc.craftingautomat;
 
 import com.google.common.collect.Lists;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.network.NetworkEvent;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.PacketDistributor;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
+import net.minecraftforge.fmllegacy.network.NetworkRegistry;
+import net.minecraftforge.fmllegacy.network.PacketDistributor;
+import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +42,7 @@ public class CraftingAutomatNetwork {
 
         private Map<List<String>, Integer> values = new HashMap<>();
 
-        public SOverrideConfigPacket(PacketBuffer buf) {
+        public SOverrideConfigPacket(FriendlyByteBuf buf) {
             int size = buf.readInt();
 
             for (int i = 0; i < size; i++) {
@@ -51,7 +51,7 @@ public class CraftingAutomatNetwork {
                 List<String> path = Lists.newArrayList();
 
                 for (int j = 0; j < pathsize; j++) {
-                    path.add(buf.readString());
+                    path.add(buf.readUtf());
                 }
 
                 values.put(path, val);
@@ -64,13 +64,13 @@ public class CraftingAutomatNetwork {
             }
         }
 
-        public void toBytes(PacketBuffer buf) {
+        public void toBytes(FriendlyByteBuf buf) {
             buf.writeInt(values.size()); // Number of values to sync
 
             for (Map.Entry<List<String>, Integer> e : values.entrySet()) {
                 buf.writeInt(e.getValue()); // The value itself
                 buf.writeInt(e.getKey().size());  // Number of elements in the path
-                e.getKey().forEach(buf::writeString); // The path itself
+                e.getKey().forEach(buf::writeUtf); // The path itself
             }
         }
 

@@ -5,13 +5,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
+import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = CraftingAutomat.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class CraftingAutomatConfig {
@@ -37,7 +36,7 @@ public class CraftingAutomatConfig {
 
     // Fires on client and server dist
     @SubscribeEvent
-    public static void onConfigReload(final ModConfig.Reloading event) {
+    public static void onConfigReload(final ModConfigEvent.Reloading event) {
         if (ServerLifecycleHooks.getCurrentServer() != null) {
             CraftingAutomatNetwork.overrideClientConfigs(COOLDOWN_TICKS, CRAFTING_TICKS);
         }

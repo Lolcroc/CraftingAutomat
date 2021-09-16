@@ -1,12 +1,12 @@
 package lolcroc.craftingautomat;
 
-import net.minecraft.block.Block;
-import net.minecraft.client.gui.ScreenManager;
-import net.minecraft.inventory.container.ContainerType;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeContainerType;
@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
 public class CraftingAutomat
 {
     public static final String MODID = "craftingautomat";
-//    public static final Logger LOGGER = LogManager.getLogger(MODID);
+    public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     @ObjectHolder(MODID)
     public static class Blocks {
@@ -35,13 +35,13 @@ public class CraftingAutomat
     }
     
     @ObjectHolder(MODID)
-    public static class TileEntityTypes {
-        public static final TileEntityType<CraftingAutomatTileEntity> autocrafter = null;
+    public static class BlockEntityTypes {
+        public static final BlockEntityType<CraftingAutomatTileEntity> autocrafter = null;
     }
     
     @ObjectHolder(MODID)
-    public static class ContainerTypes {
-        public static final ContainerType<CraftingAutomatContainer> autocrafter = null;
+    public static class MenuTypes {
+        public static final MenuType<CraftingAutomatContainer> autocrafter = null;
     }
     
     public CraftingAutomat() {
@@ -51,18 +51,18 @@ public class CraftingAutomat
     
     @SubscribeEvent
     public static void setup(FMLCommonSetupEvent event) {
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> ScreenManager.registerFactory(CraftingAutomat.ContainerTypes.autocrafter, CraftingAutomatScreen::new));
+        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> MenuScreens.register(CraftingAutomat.MenuTypes.autocrafter, CraftingAutomatScreen::new));
         CraftingAutomatNetwork.registerMessages();
     }
     
     @SubscribeEvent
-    public static void registerContainers(RegistryEvent.Register<ContainerType<?>> event) {
+    public static void registerMenus(RegistryEvent.Register<MenuType<?>> event) {
         event.getRegistry().register(IForgeContainerType.create(CraftingAutomatContainer::new).setRegistryName(CraftingAutomatBlock.REGISTRY_NAME));
     }
     
     @SubscribeEvent
-    public static void registerTiles(RegistryEvent.Register<TileEntityType<?>> event) {
-        event.getRegistry().register(TileEntityType.Builder.create(CraftingAutomatTileEntity::new, CraftingAutomat.Blocks.autocrafter).build(null).setRegistryName(CraftingAutomatBlock.REGISTRY_NAME));
+    public static void registerTiles(RegistryEvent.Register<BlockEntityType<?>> event) {
+        event.getRegistry().register(BlockEntityType.Builder.of(CraftingAutomatTileEntity::new, CraftingAutomat.Blocks.autocrafter).build(null).setRegistryName(CraftingAutomatBlock.REGISTRY_NAME));
     }
 
     @SubscribeEvent
@@ -72,14 +72,14 @@ public class CraftingAutomat
 
     @SubscribeEvent
     public static void registerItems(RegistryEvent.Register<Item> event) {
-        event.getRegistry().register(new BlockItem(CraftingAutomat.Blocks.autocrafter, new Item.Properties().group(ItemGroup.REDSTONE)).setRegistryName(CraftingAutomat.Blocks.autocrafter.getRegistryName()));
+        event.getRegistry().register(new BlockItem(CraftingAutomat.Blocks.autocrafter, new Item.Properties().tab(CreativeModeTab.TAB_REDSTONE)).setRegistryName(CraftingAutomat.Blocks.autocrafter.getRegistryName()));
     }
 
     // Registered non-statically on the forge event bus
     // Check the logical side for sending a packet from server (which can be physical CLIENT/SERVER)
     @SubscribeEvent
     public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!event.getEntity().world.isRemote) {
+        if (!event.getEntity().level.isClientSide) {
             CraftingAutomatNetwork.overrideClientConfigs(CraftingAutomatConfig.COOLDOWN_TICKS, CraftingAutomatConfig.CRAFTING_TICKS);
         }
     }

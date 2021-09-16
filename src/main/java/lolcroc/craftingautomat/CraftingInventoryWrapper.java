@@ -1,14 +1,12 @@
 package lolcroc.craftingautomat;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.CraftingInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.RecipeItemHelper;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
 import javax.annotation.Nonnull;
 
-public class CraftingInventoryWrapper extends CraftingInventory {
+public class CraftingInventoryWrapper extends CraftingContainer {
 
     private final IItemHandlerModifiable inv;
 
@@ -18,7 +16,7 @@ public class CraftingInventoryWrapper extends CraftingInventory {
     }
 
     @Override
-    public int getSizeInventory() {
+    public int getContainerSize() {
         return inv.getSlots();
     }
 
@@ -31,31 +29,31 @@ public class CraftingInventoryWrapper extends CraftingInventory {
     }
 
     @Override
-    public ItemStack getStackInSlot(int index) {
+    public ItemStack getItem(int index) {
         return inv.getStackInSlot(index);
     }
 
     @Override
-    public ItemStack removeStackFromSlot(int index) {
-        ItemStack s = getStackInSlot(index);
+    public ItemStack removeItemNoUpdate(int index) {
+        ItemStack s = getItem(index);
         if(s.isEmpty()) return ItemStack.EMPTY;
-        setInventorySlotContents(index, ItemStack.EMPTY);
+        setItem(index, ItemStack.EMPTY);
         return s;
     }
 
     @Override
-    public ItemStack decrStackSize(int index, int count) {
+    public ItemStack removeItem(int index, int count) {
         ItemStack stack = inv.getStackInSlot(index);
         return stack.isEmpty() ? ItemStack.EMPTY : stack.split(count);
     }
 
     @Override
-    public void setInventorySlotContents(int index, @Nonnull ItemStack stack) {
+    public void setItem(int index, @Nonnull ItemStack stack) {
         inv.setStackInSlot(index, stack);
     }
 
     @Override
-    public void clear() {
+    public void clearContent() {
         for(int i = 0; i < inv.getSlots(); i++) {
             inv.setStackInSlot(i, ItemStack.EMPTY);
         }

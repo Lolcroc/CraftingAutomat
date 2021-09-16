@@ -1,34 +1,34 @@
 package lolcroc.craftingautomat;
 
 import com.google.common.collect.Lists;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.fml.hooks.BasicEventHooks;
+import net.minecraftforge.fmllegacy.hooks.BasicEventHooks;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
 public class CraftingAutomatResultSlot extends SlotItemHandler {
 
     private final CraftingAutomatTileEntity tile;
-    private final PlayerEntity player;
+    private final Player player;
     private int amountCrafted;
 
-    public CraftingAutomatResultSlot(IItemHandler handler, PlayerEntity player, CraftingAutomatTileEntity te, int slotIndex, int xPosition, int yPosition) {
+    public CraftingAutomatResultSlot(IItemHandler handler, Player player, CraftingAutomatTileEntity te, int slotIndex, int xPosition, int yPosition) {
         super(handler, slotIndex, xPosition, yPosition);
         this.tile = te;
         this.player = player;
     }
 
     @Override
-    public boolean isItemValid(ItemStack stack) {
+    public boolean mayPlace(ItemStack stack) {
         return false;
     }
 
     @Override
-    public ItemStack decrStackSize(int amount) {
-        ItemStack stack = getStack();
+    public ItemStack remove(int amount) {
+        ItemStack stack = getItem();
         amountCrafted += stack.getCount(); // Wow vanilla actually does this wrong
         tile.resultHandler.ifPresent(h -> h.setStackInSlot(0, ItemStack.EMPTY));
         return stack;
@@ -36,14 +36,14 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
 
     // Overrides extract method
     @Override
-    public boolean canTakeStack(PlayerEntity playerIn) {
+    public boolean mayPickup(Player playerIn) {
         return true;
     }
 
     @Override
-    protected void onCrafting(ItemStack stack, int amount) {
+    protected void onQuickCraft(ItemStack stack, int amount) {
         amountCrafted += amount;
-        onCrafting(stack);
+        checkTakeAchievements(stack);
     }
 
     @Override
@@ -52,36 +52,35 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
     }
 
     @Override
-    public void onSlotChange(ItemStack stack, ItemStack other) {
+    public void onQuickCraft(ItemStack stack, ItemStack other) {
         int i = other.getCount() - stack.getCount();
         if (i > 0) {
-            onCrafting(other, i);
+            onQuickCraft(other, i);
         }
     }
 
     @Override
-    protected void onCrafting(ItemStack stack) {
+    protected void checkTakeAchievements(ItemStack stack) {
         //Fire Item.onCrafting and Forge crafting hook
         if (amountCrafted > 0) {
-            stack.onCrafting(player.world, player, amountCrafted);
+            stack.onCraftedBy(player.level, player, amountCrafted);
             tile.matrixWrapper.ifPresent(h -> BasicEventHooks.firePlayerCraftingEvent(player, stack, h));
         }
         amountCrafted = 0;
         
         //Unlock recipe
-        IRecipe recipe = tile.getRecipeUsed();
-        if (recipe != null && !recipe.isDynamic()) {
-            player.unlockRecipes(Lists.newArrayList(recipe));
+        Recipe<?> recipe = tile.getRecipeUsed();
+        if (recipe != null && !recipe.isSpecial()) {
+            player.awardRecipes(Lists.newArrayList(recipe));
         }
     }
 
     @Override
-    public ItemStack onTake(PlayerEntity thePlayer, ItemStack stack) {
-        onCrafting(stack);
-        ForgeHooks.setCraftingPlayer(thePlayer);
-        tile.consumeIngredients(thePlayer);
+    public void onTake(Player player, ItemStack stack) {
+        checkTakeAchievements(stack);
+        ForgeHooks.setCraftingPlayer(player);
+        tile.consumeIngredients(player);
         tile.updateRecipe();
         ForgeHooks.setCraftingPlayer(null);
-        return stack;
     }
 }

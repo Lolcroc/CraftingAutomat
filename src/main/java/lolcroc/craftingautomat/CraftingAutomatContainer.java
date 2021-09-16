@@ -1,32 +1,32 @@
 package lolcroc.craftingautomat;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.IWorldPosCallable;
-import net.minecraft.util.IntReferenceHolder;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.DataSlot;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
-public class CraftingAutomatContainer extends Container {
+public class CraftingAutomatContainer extends AbstractContainerMenu {
 
     private final CraftingAutomatTileEntity tile;
-    private final IntReferenceHolder ticksHolder;
-    private final IntReferenceHolder craftingFlagHolder;
+    private final DataSlot ticksHolder;
+    private final DataSlot craftingFlagHolder;
     
     // Only on client
-    public CraftingAutomatContainer(int id, PlayerInventory playerInventory, PacketBuffer extraData) {
-        this(id, playerInventory, (CraftingAutomatTileEntity) Minecraft.getInstance().world.getTileEntity(extraData.readBlockPos()));
+    public CraftingAutomatContainer(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
+        this(id, playerInventory, (CraftingAutomatTileEntity) Minecraft.getInstance().level.getBlockEntity(extraData.readBlockPos()));
     }
     
-    public CraftingAutomatContainer(int id, PlayerInventory playerInventory, CraftingAutomatTileEntity te) {
-        super(CraftingAutomat.ContainerTypes.autocrafter, id);
+    public CraftingAutomatContainer(int id, Inventory playerInventory, CraftingAutomatTileEntity te) {
+        super(CraftingAutomat.MenuTypes.autocrafter, id);
         this.tile = te;
 
         // Result slot
@@ -68,8 +68,8 @@ public class CraftingAutomatContainer extends Container {
         // Adds trackers for ticksActive and craftingFlag
         ticksHolder = te.ticksHolder;
         craftingFlagHolder = te.craftingFlagHolder;
-        trackInt(ticksHolder);
-        trackInt(craftingFlagHolder);
+        addDataSlot(ticksHolder);
+        addDataSlot(craftingFlagHolder);
     }
     
     @OnlyIn(Dist.CLIENT)
@@ -83,73 +83,73 @@ public class CraftingAutomatContainer extends Container {
     }
 
     @Override
-    public boolean canInteractWith(PlayerEntity player) {
-        return isWithinUsableDistance(IWorldPosCallable.of(tile.getWorld(), tile.getPos()), player, CraftingAutomat.Blocks.autocrafter);
+    public boolean stillValid(Player player) {
+        return stillValid(ContainerLevelAccess.create(tile.getLevel(), tile.getBlockPos()), player, CraftingAutomat.Blocks.autocrafter);
     }
 
     @Override
-    public boolean canMergeSlot(ItemStack stack, Slot slot) {
-        return !(slot instanceof CraftingAutomatResultSlot) && super.canMergeSlot(stack, slot);
+    public boolean canTakeItemForPickAll(ItemStack stack, Slot slot) {
+        return !(slot instanceof CraftingAutomatResultSlot) && super.canTakeItemForPickAll(stack, slot);
     }
 
     @Override
-    public ItemStack transferStackInSlot(PlayerEntity playerIn, int index)
+    public ItemStack quickMoveStack(Player player, int index)
     {
         ItemStack itemstack = ItemStack.EMPTY;
-        Slot slot = this.inventorySlots.get(index);
+        Slot slot = slots.get(index);
 
-        if (slot != null && slot.getHasStack()) {
-            ItemStack itemstack1 = slot.getStack();
+        if (slot != null && slot.hasItem()) {
+            ItemStack itemstack1 = slot.getItem();
             itemstack = itemstack1.copy();
 
             if (index == 0) {
-                itemstack1.getItem().onCreated(itemstack1, playerIn.world, playerIn);
+                itemstack1.getItem().onCraftedBy(itemstack1, player.level, player);
 
                 // Merge result slot to player inv
-                if (!this.mergeItemStack(itemstack1, 19, 55, true)) {
+                if (!moveItemStackTo(itemstack1, 19, 55, true)) {
                     return ItemStack.EMPTY;
                 }
 
-                slot.onSlotChange(itemstack1, itemstack);
+                slot.onQuickCraft(itemstack1, itemstack);
             }
             else if (index >= 1 && index < 10) {
                 // Merge matrix to buffer, then to full player inv
-                if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 19, 55, true)) {
+                if (!moveItemStackTo(itemstack1, 10, 19, false) && !moveItemStackTo(itemstack1, 19, 55, true)) {
                     return ItemStack.EMPTY;
                 }
             }
             else if (index >= 10 && index < 19) {
                 // Merge buffer to full player inv
-                if (!this.mergeItemStack(itemstack1, 19, 55, true)) {
+                if (!moveItemStackTo(itemstack1, 19, 55, true)) {
                     return ItemStack.EMPTY;
                 }
             }
             else if (index >= 19 && index < 46) {
                 // Merge player inv to buffer, then to hotbar
-                if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 46, 55, false)) {
+                if (!moveItemStackTo(itemstack1, 10, 19, false) && !moveItemStackTo(itemstack1, 46, 55, false)) {
                     return ItemStack.EMPTY;
                 }
             }
-            else if (!this.mergeItemStack(itemstack1, 10, 19, false) && !this.mergeItemStack(itemstack1, 19, 46, false)) {
+            else if (!moveItemStackTo(itemstack1, 10, 19, false) && !moveItemStackTo(itemstack1, 19, 46, false)) {
                 // Merge hotbar to buffer, then to player inv
                 return ItemStack.EMPTY;
             }
 
             if (itemstack1.isEmpty()) {
-                slot.putStack(ItemStack.EMPTY);
+                slot.set(ItemStack.EMPTY);
             }
             else {
-                slot.onSlotChanged();
+                slot.setChanged();
             }
 
             if (itemstack1.getCount() == itemstack.getCount()) {
                 return ItemStack.EMPTY;
             }
 
-            ItemStack itemstack2 = slot.onTake(playerIn, itemstack1);
+            slot.onTake(player, itemstack1);
 
             if (index == 0) {
-                playerIn.dropItem(itemstack2, false);
+                player.drop(itemstack1, false);
             }
         }
 
@@ -165,10 +165,10 @@ public class CraftingAutomatContainer extends Container {
         }
 
         @Override
-        public void onSlotChanged() {
+        public void setChanged() {
             tile.updateRecipe();
-            tile.markDirty();
-            super.onSlotChanged();
+            tile.setChanged();
+            super.setChanged();
         }
     }
 
@@ -181,10 +181,10 @@ public class CraftingAutomatContainer extends Container {
         }
 
         @Override
-        public void onSlotChanged() {
+        public void setChanged() {
             tile.updateHelper();
-            tile.markDirty();
-            super.onSlotChanged();
+            tile.setChanged();
+            super.setChanged();
         }
     }
 

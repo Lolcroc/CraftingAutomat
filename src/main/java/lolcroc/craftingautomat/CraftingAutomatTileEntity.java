@@ -1,33 +1,34 @@
 package lolcroc.craftingautomat;
 
 import com.google.common.collect.Lists;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.inventory.CraftingInventory;
-import net.minecraft.inventory.IRecipeHolder;
-import net.minecraft.inventory.ItemStackHelper;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.inventory.container.INamedContainerProvider;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.ICraftingRecipe;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.IRecipeType;
-import net.minecraft.item.crafting.RecipeItemHelper;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.ITickableTileEntity;
-import net.minecraft.tileentity.LockableTileEntity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.IntReferenceHolder;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.GameRules;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Clearable;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.LockCode;
-import net.minecraft.world.World;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.StackedContents;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.DataSlot;
+import net.minecraft.world.inventory.RecipeHolder;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.util.INBTSerializable;
@@ -45,15 +46,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-public class CraftingAutomatTileEntity extends TileEntity implements INamedContainerProvider, ITickableTileEntity, IRecipeHolder {
+public class CraftingAutomatTileEntity extends BlockEntity implements MenuProvider, RecipeHolder, Clearable {
 
-    private ITextComponent customName;
-    private LockCode lock = LockCode.EMPTY_CODE;
+    protected Component customName;
+    protected LockCode lock = LockCode.NO_LOCK;
 
-    private RecipeItemHelper itemHelper = new RecipeItemHelper();
-    private Optional<ICraftingRecipe> recipeUsed = Optional.empty();
-    private int ticksActive;
-    IntReferenceHolder ticksHolder = new IntReferenceHolder() {
+    protected StackedContents itemHelper = new StackedContents();
+    protected Optional<CraftingRecipe> recipeUsed = Optional.empty();
+    protected int ticksActive;
+    DataSlot ticksHolder = new DataSlot() {
         @Override
         public int get() {
             return ticksActive;
@@ -65,16 +66,15 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
         }
     };
 
-
     enum CraftingFlag {
         NONE, READY, MISSING, INVALID;
 
-        private final List<ITextComponent> displayTags;
+        private final List<Component> displayTags;
         private static final CraftingFlag[] VALUES = CraftingFlag.values();
 
         CraftingFlag() {
-            List<ITextComponent> list = Lists.newArrayList();
-            list.add((new TranslationTextComponent(toString())).func_240699_a_(TextFormatting.GRAY));
+            List<Component> list = Lists.newArrayList();
+            list.add((new TranslatableComponent(toString())).withStyle(ChatFormatting.GRAY));
             displayTags = list;
         }
 
@@ -82,7 +82,7 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
             return ordinal();
         }
 
-        public List<ITextComponent> getDisplayTags() {
+        public List<Component> getDisplayTags() {
             return displayTags;
         }
 
@@ -90,19 +90,19 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
             return VALUES[idx];
         }
 
-        public static CraftingFlag getNewFlag(Optional<ICraftingRecipe> recipe, RecipeItemHelper helper) {
-            return recipe.map(r -> r.isDynamic() ? INVALID :
+        public static CraftingFlag getNewFlag(Optional<CraftingRecipe> recipe, StackedContents helper) {
+            return recipe.map(r -> r.isSpecial() ? INVALID :
                     ((helper.getBiggestCraftableStack(r, null) > 0) ? READY : MISSING)).orElse(NONE);
         }
 
         @Override
         public String toString() {
-            return "container." + CraftingAutomatBlock.REGISTRY_NAME.toString() + ".flag." + StringUtils.toLowerCase(name());
+            return "container." + CraftingAutomatBlock.REGISTRY_NAME + ".flag." + StringUtils.toLowerCase(name());
         }
-    };
+    }
 
     private CraftingFlag craftingFlag = CraftingFlag.NONE;
-    protected IntReferenceHolder craftingFlagHolder = new IntReferenceHolder() {
+    protected DataSlot craftingFlagHolder = new DataSlot() {
         @Override
         public int get() {
             return craftingFlag.getIndex();
@@ -128,32 +128,29 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
     protected LazyOptional<IItemHandler> reversedBufferHandler = LazyOptional.of(() ->
             new ReversedInvWrapper(bufferHandler.orElse(EMPTYHANDLER)));
     // Wrapper for using recipe methods
-    protected LazyOptional<CraftingInventory> matrixWrapper = LazyOptional.of(() ->
+    protected LazyOptional<CraftingContainer> matrixWrapper = LazyOptional.of(() ->
             new CraftingInventoryWrapper(matrixHandler.orElse(EMPTYHANDLER)));
 
-    public CraftingAutomatTileEntity() {
-        super(CraftingAutomat.TileEntityTypes.autocrafter);
+    public CraftingAutomatTileEntity(BlockPos pos, BlockState state) {
+        super(CraftingAutomat.BlockEntityTypes.autocrafter, pos, state);
     }
 
-    @Override
-    public void tick() {
-        if (!world.isRemote && getBlockState().get(CraftingAutomatBlock.ACTIVE)) {
-            ticksActive++;
+    public static void serverTick(Level level, BlockPos pos, BlockState state, CraftingAutomatTileEntity entity) {
+        entity.ticksActive++;
 
-            if ((ticksActive <= CraftingAutomatConfig.CRAFTING_TICKS.get() && !isReady()) ||
-                    ticksActive >= CraftingAutomatConfig.CRAFTING_TICKS.get() + CraftingAutomatConfig.COOLDOWN_TICKS.get()) {
-                ticksActive = 0;
-                world.setBlockState(pos, getBlockState().with(CraftingAutomatBlock.ACTIVE, Boolean.FALSE));
-            } else if (ticksActive == CraftingAutomatConfig.CRAFTING_TICKS.get()) {
-                resultHandler.ifPresent(h -> {
-                    // Copy because crafting from buffer doesn't update the recipe output slot
-                    ItemStack stack = h.getStackInSlot(0).copy();
-                    if (!stack.isEmpty()) ResultHandler.outputStack(this, stack, false);
-                });
-                consumeIngredients(null);
-            }
-            markDirty();
+        if ((entity.ticksActive <= CraftingAutomatConfig.CRAFTING_TICKS.get() && !entity.isReady()) ||
+                entity.ticksActive >= CraftingAutomatConfig.CRAFTING_TICKS.get() + CraftingAutomatConfig.COOLDOWN_TICKS.get()) {
+            entity.ticksActive = 0;
+            level.setBlockAndUpdate(pos, entity.getBlockState().setValue(CraftingAutomatBlock.ACTIVE, Boolean.FALSE));
+        } else if (entity.ticksActive == CraftingAutomatConfig.CRAFTING_TICKS.get()) {
+            entity.resultHandler.ifPresent(h -> {
+                // Copy because crafting from buffer doesn't update the recipe output slot
+                ItemStack stack = h.getStackInSlot(0).copy();
+                if (!stack.isEmpty()) ResultHandler.outputStack(entity, stack, false);
+            });
+            entity.consumeIngredients(null);
         }
+        entity.setChanged();
     }
 
     public boolean isReady() {
@@ -161,39 +158,60 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
     }
 
     @Override
+    public void clearRemoved() {
+        super.clearRemoved();
+        updateRecipe();
+    }
+
+    /*
+    TODO this method is dead.
+    See https://github.com/MinecraftForge/MinecraftForge/issues/7926 and
+    https://github.com/MinecraftForge/MinecraftForge/pull/7946 for a PR that fixes it
+     */
+    @Override
     public void onLoad() {
         super.onLoad();
         updateRecipe();
     }
 
     public void updateRecipe() {
-        if (this.hasWorld()) {
+        if (this.hasLevel()) {
             matrixWrapper.ifPresent(w -> {
-                recipeUsed = world.getRecipeManager().getRecipe(IRecipeType.CRAFTING, w, world)
-                        .filter(r -> canUseRecipe(world, null, r)); // Set new recipe or null if missing/can't craft
+                recipeUsed = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, w, level)
+                        .filter(r -> setRecipeUsed(level, null, r)); // Set new recipe or null if missing/can't craft
                 resultHandler.ifPresent(h -> h.setStackInSlot(0, recipeUsed.map(r ->
-                        r.getCraftingResult(w)).orElse(ItemStack.EMPTY))); // Update result slot
+                        r.assemble(w)).orElse(ItemStack.EMPTY))); // Update result slot
             });
             craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
         }
-//		CraftingAutomat.LOGGER.warn("Did update recipe");
+		CraftingAutomat.LOGGER.warn("Did update recipe");
     }
 
     @Override
-    public void setRecipeUsed(@Nullable IRecipe<?> recipe) {
-        recipeUsed = Optional.ofNullable((ICraftingRecipe) recipe);
+    public void clearContent() {
+        combinedHandler.ifPresent(h -> {
+            for (int i = 0; i < h.getSlots(); i++) {
+                h.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        });
+        updateRecipe();
+    }
+
+    @Override
+    public void setRecipeUsed(@Nullable Recipe<?> recipe) {
+        recipeUsed = Optional.ofNullable((CraftingRecipe) recipe);
     }
 
     @Nullable
     @Override
-    public IRecipe<?> getRecipeUsed() {
+    public Recipe<?> getRecipeUsed() {
         return recipeUsed.orElse(null);
     }
 
     // Without player check and without set method
     @Override
-    public boolean canUseRecipe(World worldIn, @Nullable ServerPlayerEntity player, IRecipe<?> recipe) {
-        return !worldIn.getGameRules().getBoolean(GameRules.DO_LIMITED_CRAFTING) || recipe.isDynamic();
+    public boolean setRecipeUsed(Level level, @Nullable ServerPlayer player, Recipe<?> recipe) {
+        return !level.getGameRules().getBoolean(GameRules.RULE_LIMITED_CRAFTING) || recipe.isSpecial();
     }
 
     // Fired when the buffer changes
@@ -207,68 +225,66 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
         return recipeUsed.map(r -> itemHelper.getBiggestCraftableStack(r, null)).orElse(0);
     }
 
-    private static final ITextComponent DEFAULT_NAME = new TranslationTextComponent("container." + CraftingAutomatBlock.REGISTRY_NAME.toString());
+    private static final Component DEFAULT_NAME = new TranslatableComponent("container." + CraftingAutomatBlock.REGISTRY_NAME.toString());
 
     @Nonnull
     @Override
-    public ITextComponent getDisplayName() {
+    public Component getDisplayName() {
         return this.hasCustomName() ? this.customName : DEFAULT_NAME;
     }
 
     @Override
-    public Container createMenu(int id, @Nonnull PlayerInventory inventory, @Nonnull PlayerEntity player) {
-        return LockableTileEntity.canUnlock(player, this.lock, this.getDisplayName()) ? new CraftingAutomatContainer(id, inventory, this) : null;
+    public AbstractContainerMenu createMenu(int id, @Nonnull Inventory inventory, @Nonnull Player player) {
+        return BaseContainerBlockEntity.canUnlock(player, this.lock, this.getDisplayName()) ? new CraftingAutomatContainer(id, inventory, this) : null;
     }
 
     public boolean hasCustomName() {
         return this.customName != null;
     }
 
-    public void setCustomName(@Nullable ITextComponent name) {
+    public void setCustomName(@Nullable Component name) {
         this.customName = name;
     }
 
-    // Read NBT
     @Override
-    public void func_230337_a_(BlockState state, CompoundNBT compound) {
-        super.func_230337_a_(state, compound);
+    public void load(CompoundTag compound) {
+        super.load(compound);
 
         // Backwards compatibility
         if (!compound.getList("Items", 10).isEmpty()) {
             NonNullList<ItemStack> items = NonNullList.<ItemStack>withSize(19, ItemStack.EMPTY);
-            ItemStackHelper.loadAllItems(compound, items);
+            ContainerHelper.loadAllItems(compound, items);
 
-            for(int i = 1; i < items.size(); i++) { // Skip result slot
+            for (int i = 1; i < items.size(); i++) { // Skip result slot
                 int finalI = i;
                 combinedHandler.ifPresent(h -> h.setStackInSlot(finalI - 1, items.get(finalI)));
             }
-        }
-        else {
-            bufferHandler.ifPresent(h -> ((INBTSerializable<CompoundNBT>) h).deserializeNBT(compound.getCompound("Buffer")));
-            matrixHandler.ifPresent(h -> ((INBTSerializable<CompoundNBT>) h).deserializeNBT(compound.getCompound("Matrix")));
+        } else {
+            bufferHandler.ifPresent(h -> ((INBTSerializable<CompoundTag>) h).deserializeNBT(compound.getCompound("Buffer")));
+            matrixHandler.ifPresent(h -> ((INBTSerializable<CompoundTag>) h).deserializeNBT(compound.getCompound("Matrix")));
         }
 
         if (compound.contains("CustomName", 8)) {
-            customName = ITextComponent.Serializer.func_240643_a_(compound.getString("CustomName")); // fromJson
+            customName = Component.Serializer.fromJson(compound.getString("CustomName"));
         }
 
         ticksActive = compound.getInt("TicksActive");
-        lock = LockCode.read(compound);
+        lock = LockCode.fromTag(compound);
     }
 
     @Override
-    public CompoundNBT write(CompoundNBT compound) {
-        super.write(compound);
+    public CompoundTag save(CompoundTag compound) {
+        super.save(compound);
 
-        bufferHandler.ifPresent(h -> compound.put("Buffer", ((INBTSerializable<CompoundNBT>) h).serializeNBT()));
-        matrixHandler.ifPresent(h -> compound.put("Matrix", ((INBTSerializable<CompoundNBT>) h).serializeNBT()));
+        bufferHandler.ifPresent(h -> compound.put("Buffer", ((INBTSerializable<CompoundTag>) h).serializeNBT()));
+        matrixHandler.ifPresent(h -> compound.put("Matrix", ((INBTSerializable<CompoundTag>) h).serializeNBT()));
 
         if (hasCustomName()) {
-            compound.putString("CustomName", ITextComponent.Serializer.toJson(customName));
+            compound.putString("CustomName", Component.Serializer.toJson(customName));
         }
 
         compound.putInt("TicksActive", ticksActive);
-        lock.write(compound);
+        lock.addToTag(compound);
 
         return compound;
     }
@@ -279,24 +295,21 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction facing) {
-        if (!removed && capability == ITEM_HANDLER_CAPABILITY) {
+        if (!remove && capability == ITEM_HANDLER_CAPABILITY) {
             if (facing == null) {
                 return combinedHandler.cast(); // If null side; return normal buffer + crafting matrix
-            }
-            else if (facing == getBlockState().get(CraftingAutomatBlock.FACING)) {
+            } else if (facing == getBlockState().getValue(CraftingAutomatBlock.FACING)) {
                 return resultHandler.cast(); // Return the result face as a 'read-only'
-            }
-            else if (facing == Direction.DOWN) {
+            } else if (facing == Direction.DOWN) {
                 return reversedBufferHandler.cast(); // If down face; return buffer reversed
-            }
-            else {
+            } else {
                 return bufferHandler.cast(); // If any other face; return normal buffer
             }
         }
         return super.getCapability(capability, facing);
     }
 
-    public void consumeIngredients(@Nullable PlayerEntity player) {
+    public void consumeIngredients(@Nullable Player player) {
         recipeUsed.ifPresent(recipe -> {
             boolean ready = isReady();
             // Need to resolve this value now, otherwise the list will be empty after crafting from matrix
@@ -338,8 +351,7 @@ public class CraftingAutomatTileEntity extends TileEntity implements INamedConta
                     .forEach(stack -> {
                         if (player != null) {
                             ItemHandlerHelper.giveItemToPlayer(player, stack); // Give to player if present
-                        }
-                        else {
+                        } else {
                             ResultHandler.outputStack(this, stack, true); // Output from autocrafter
                         }
                     });

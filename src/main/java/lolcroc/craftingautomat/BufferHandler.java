@@ -1,11 +1,11 @@
 package lolcroc.craftingautomat;
 
-import net.minecraft.inventory.IRecipeHelperPopulator;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.RecipeItemHelper;
+import net.minecraft.world.entity.player.StackedContents;
+import net.minecraft.world.inventory.StackedContentsCompatible;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemStackHandler;
 
-public class BufferHandler extends ItemStackHandler implements IRecipeHelperPopulator {
+public class BufferHandler extends ItemStackHandler implements StackedContentsCompatible {
 
     private final CraftingAutomatTileEntity tile;
 
@@ -17,7 +17,7 @@ public class BufferHandler extends ItemStackHandler implements IRecipeHelperPopu
     @Override
     protected void onContentsChanged(int slot) {
         tile.updateHelper();
-        tile.markDirty();
+        tile.setChanged();
     }
 
     @Override
@@ -26,10 +26,10 @@ public class BufferHandler extends ItemStackHandler implements IRecipeHelperPopu
     }
 
     @Override
-    public void fillStackedContents(RecipeItemHelper helper) {
-        helper.clear();
+    public void fillStackedContents(StackedContents contents) {
+        contents.clear();
         for(ItemStack itemstack : stacks) {
-            helper.accountPlainStack(itemstack);
+            contents.accountSimpleStack(itemstack);
         }
     }
 }

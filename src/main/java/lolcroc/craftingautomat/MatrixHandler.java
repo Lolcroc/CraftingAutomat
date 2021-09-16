@@ -14,7 +14,7 @@ public class MatrixHandler extends ItemStackHandler {
     @Override
     protected void onContentsChanged(int slot) {
         tile.updateRecipe();
-        tile.markDirty();
+        tile.setChanged();
     }
 
     // No updateRecipe() in onLoad(): There is no world (and thus no recipemanager) during nbt deserialization :(

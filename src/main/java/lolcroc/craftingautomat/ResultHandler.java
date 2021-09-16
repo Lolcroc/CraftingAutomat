@@ -1,15 +1,15 @@
 package lolcroc.craftingautomat;
 
-import net.minecraft.dispenser.DefaultDispenseItemBehavior;
-import net.minecraft.dispenser.Position;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.minecart.ContainerMinecartEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.PositionImpl;
+import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.vehicle.AbstractMinecartContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -39,10 +39,10 @@ public class ResultHandler extends ItemStackHandler {
         return ItemStack.EMPTY;
     }
 
-    protected static void dispense(World world, BlockPos pos, Direction side, ItemStack stack, boolean silent) {
-        double x = pos.getX() + 0.5D + 0.7D * (double)side.getXOffset();
-        double y = pos.getY() + 0.5D + 0.7D * (double)side.getYOffset();
-        double z = pos.getZ() + 0.5D + 0.7D * (double)side.getZOffset();
+    protected static void dispense(Level level, BlockPos pos, Direction side, ItemStack stack, boolean silent) {
+        double x = pos.getX() + 0.5D + 0.7D * (double)side.getStepX();
+        double y = pos.getY() + 0.5D + 0.7D * (double)side.getStepY();
+        double z = pos.getZ() + 0.5D + 0.7D * (double)side.getStepZ();
 
         // Lower the dispense position slightly when shooting from the side
         if (side.getAxis().isHorizontal()) {
@@ -50,11 +50,11 @@ public class ResultHandler extends ItemStackHandler {
         }
 
         ItemStack itemstack = stack.split(stack.getCount()); //is empty afterwards
-        DefaultDispenseItemBehavior.doDispense(world, itemstack, 6, side, new Position(x, y, z));
+        DefaultDispenseItemBehavior.spawnItem(level, itemstack, 6, side, new PositionImpl(x, y, z));
 
         if (!silent) {
-            world.playEvent(1000, pos, 0); // Play dispense sound
-            world.playEvent(2000, pos, side.getIndex()); // Spawn dispense particles
+            level.levelEvent(1000, pos, 0); // Play dispense sound
+            level.levelEvent(2000, pos, side.get3DDataValue()); // Spawn dispense particles
         }
     }
 
@@ -64,23 +64,23 @@ public class ResultHandler extends ItemStackHandler {
                 .orElse(stack);
     }
 
-    public static void outputStack(TileEntity tile, ItemStack stack, boolean silent) {
-        BlockPos tilepos = tile.getPos();
-        World world = tile.getWorld();
-        Direction outputface = tile.getBlockState().get(CraftingAutomatBlock.FACING);
-        BlockPos targetpos = tilepos.offset(outputface);
+    public static void outputStack(BlockEntity tile, ItemStack stack, boolean silent) {
+        BlockPos tilepos = tile.getBlockPos();
+        Level level = tile.getLevel();
+        Direction outputface = tile.getBlockState().getValue(CraftingAutomatBlock.FACING);
+        BlockPos targetpos = tilepos.relative(outputface);
 
-        if (world.getBlockState(targetpos).hasTileEntity()) {
-            TileEntity tileentity = world.getTileEntity(targetpos);
+        if (level.getBlockState(targetpos).hasBlockEntity()) {
+            BlockEntity tileentity = level.getBlockEntity(targetpos);
             if (tileentity != null) {
                 stack = insertStack(tileentity, outputface.getOpposite(), stack);
             }
         }
         else {
             // Only allow hopper/chest minecarts for now
-            Iterator<Entity> invents = world.getEntitiesInAABBexcluding(null, new AxisAlignedBB(targetpos), e ->
+            Iterator<Entity> invents = level.getEntities((Entity) null, new AABB(targetpos), e ->
                     e.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, outputface.getOpposite()).isPresent()
-                            && e.isAlive() && (e instanceof ContainerMinecartEntity)).iterator();
+                            && e.isAlive() && (e instanceof AbstractMinecartContainer)).iterator();
 
             while (invents.hasNext() && !stack.isEmpty()) {
                 stack = insertStack(invents.next(), outputface.getOpposite(), stack);
@@ -89,7 +89,7 @@ public class ResultHandler extends ItemStackHandler {
 
         // Dispense the remainder
         if (!stack.isEmpty()) {
-            dispense(world, tilepos, outputface, stack, silent);
+            dispense(level, tilepos, outputface, stack, silent);
         }
     }
 }
