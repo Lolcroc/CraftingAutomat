@@ -1,5 +1,5 @@
-# ProjectLepton
-A vanilla-flavoured autocrafter for great fun.
+# Crafting Automat
+A vanilla-flavoured autocrafter for Minecraft.
 
 Source code for https://www.curseforge.com/minecraft/mc-mods/crafting-automat
 
