@@ -30,7 +30,8 @@ import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityInject;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fml.loading.StringUtils;
@@ -46,7 +47,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-public class CraftingAutomatTileEntity extends BlockEntity implements MenuProvider, RecipeHolder, Clearable {
+public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvider, RecipeHolder, Clearable {
 
     protected Component customName;
     protected LockCode lock = LockCode.NO_LOCK;
@@ -131,11 +132,11 @@ public class CraftingAutomatTileEntity extends BlockEntity implements MenuProvid
     protected LazyOptional<CraftingContainer> matrixWrapper = LazyOptional.of(() ->
             new CraftingInventoryWrapper(matrixHandler.orElse(EMPTYHANDLER)));
 
-    public CraftingAutomatTileEntity(BlockPos pos, BlockState state) {
+    public CraftingAutomatBlockEntity(BlockPos pos, BlockState state) {
         super(CraftingAutomat.BlockEntityTypes.autocrafter, pos, state);
     }
 
-    public static void serverTick(Level level, BlockPos pos, BlockState state, CraftingAutomatTileEntity entity) {
+    public static void serverTick(Level level, BlockPos pos, BlockState state, CraftingAutomatBlockEntity entity) {
         entity.ticksActive++;
 
         if ((entity.ticksActive <= CraftingAutomatConfig.CRAFTING_TICKS.get() && !entity.isReady()) ||
@@ -157,11 +158,11 @@ public class CraftingAutomatTileEntity extends BlockEntity implements MenuProvid
         return craftingFlag == CraftingFlag.READY;
     }
 
-    @Override
-    public void clearRemoved() {
-        super.clearRemoved();
-        updateRecipe();
-    }
+//    @Override
+//    public void clearRemoved() {
+//        super.clearRemoved();
+//        updateRecipe();
+//    }
 
     /*
     TODO this method is dead.
@@ -184,7 +185,7 @@ public class CraftingAutomatTileEntity extends BlockEntity implements MenuProvid
             });
             craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
         }
-		CraftingAutomat.LOGGER.warn("Did update recipe");
+//		CraftingAutomat.LOGGER.warn("Did update recipe");
     }
 
     @Override
@@ -273,7 +274,7 @@ public class CraftingAutomatTileEntity extends BlockEntity implements MenuProvid
     }
 
     @Override
-    public CompoundTag save(CompoundTag compound) {
+    public void saveAdditional(CompoundTag compound) {
         super.save(compound);
 
         bufferHandler.ifPresent(h -> compound.put("Buffer", ((INBTSerializable<CompoundTag>) h).serializeNBT()));
@@ -285,12 +286,9 @@ public class CraftingAutomatTileEntity extends BlockEntity implements MenuProvid
 
         compound.putInt("TicksActive", ticksActive);
         lock.addToTag(compound);
-
-        return compound;
     }
 
-    @CapabilityInject(IItemHandler.class)
-    public static Capability<IItemHandler> ITEM_HANDLER_CAPABILITY = null;
+    private static final Capability<IItemHandler> ITEM_HANDLER_CAPABILITY = CapabilityManager.get(new CapabilityToken<>(){});
 
     @Nonnull
     @Override

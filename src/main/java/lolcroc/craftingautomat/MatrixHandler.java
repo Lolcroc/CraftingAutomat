@@ -4,9 +4,9 @@ import net.minecraftforge.items.ItemStackHandler;
 
 public class MatrixHandler extends ItemStackHandler {
 
-    private final CraftingAutomatTileEntity tile;
+    private final CraftingAutomatBlockEntity tile;
 
-    public MatrixHandler(CraftingAutomatTileEntity te) {
+    public MatrixHandler(CraftingAutomatBlockEntity te) {
         super(9);
         tile = te;
     }

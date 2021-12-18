@@ -7,9 +7,9 @@ import net.minecraftforge.items.ItemStackHandler;
 
 public class BufferHandler extends ItemStackHandler implements StackedContentsCompatible {
 
-    private final CraftingAutomatTileEntity tile;
+    private final CraftingAutomatBlockEntity tile;
 
-    public BufferHandler(CraftingAutomatTileEntity te) {
+    public BufferHandler(CraftingAutomatBlockEntity te) {
         super(9);
         this.tile = te;
     }

@@ -5,17 +5,17 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.fmllegacy.hooks.BasicEventHooks;
+import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
 public class CraftingAutomatResultSlot extends SlotItemHandler {
 
-    private final CraftingAutomatTileEntity tile;
+    private final CraftingAutomatBlockEntity tile;
     private final Player player;
     private int amountCrafted;
 
-    public CraftingAutomatResultSlot(IItemHandler handler, Player player, CraftingAutomatTileEntity te, int slotIndex, int xPosition, int yPosition) {
+    public CraftingAutomatResultSlot(IItemHandler handler, Player player, CraftingAutomatBlockEntity te, int slotIndex, int xPosition, int yPosition) {
         super(handler, slotIndex, xPosition, yPosition);
         this.tile = te;
         this.player = player;
@@ -64,7 +64,7 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
         //Fire Item.onCrafting and Forge crafting hook
         if (amountCrafted > 0) {
             stack.onCraftedBy(player.level, player, amountCrafted);
-            tile.matrixWrapper.ifPresent(h -> BasicEventHooks.firePlayerCraftingEvent(player, stack, h));
+            tile.matrixWrapper.ifPresent(h -> ForgeEventFactory.firePlayerCraftingEvent(player, stack, h));
         }
         amountCrafted = 0;
         

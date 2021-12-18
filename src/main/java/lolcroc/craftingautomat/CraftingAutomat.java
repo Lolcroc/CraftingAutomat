@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.extensions.IForgeContainerType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -36,7 +36,7 @@ public class CraftingAutomat
     
     @ObjectHolder(MODID)
     public static class BlockEntityTypes {
-        public static final BlockEntityType<CraftingAutomatTileEntity> autocrafter = null;
+        public static final BlockEntityType<CraftingAutomatBlockEntity> autocrafter = null;
     }
     
     @ObjectHolder(MODID)
@@ -57,12 +57,12 @@ public class CraftingAutomat
     
     @SubscribeEvent
     public static void registerMenus(RegistryEvent.Register<MenuType<?>> event) {
-        event.getRegistry().register(IForgeContainerType.create(CraftingAutomatContainer::new).setRegistryName(CraftingAutomatBlock.REGISTRY_NAME));
+        event.getRegistry().register(IForgeMenuType.create(CraftingAutomatContainer::new).setRegistryName(CraftingAutomatBlock.REGISTRY_NAME));
     }
     
     @SubscribeEvent
     public static void registerTiles(RegistryEvent.Register<BlockEntityType<?>> event) {
-        event.getRegistry().register(BlockEntityType.Builder.of(CraftingAutomatTileEntity::new, CraftingAutomat.Blocks.autocrafter).build(null).setRegistryName(CraftingAutomatBlock.REGISTRY_NAME));
+        event.getRegistry().register(BlockEntityType.Builder.of(CraftingAutomatBlockEntity::new, CraftingAutomat.Blocks.autocrafter).build(null).setRegistryName(CraftingAutomatBlock.REGISTRY_NAME));
     }
 
     @SubscribeEvent

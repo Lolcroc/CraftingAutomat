@@ -16,16 +16,16 @@ import net.minecraftforge.items.SlotItemHandler;
 
 public class CraftingAutomatContainer extends AbstractContainerMenu {
 
-    private final CraftingAutomatTileEntity tile;
+    private final CraftingAutomatBlockEntity tile;
     private final DataSlot ticksHolder;
     private final DataSlot craftingFlagHolder;
     
     // Only on client
     public CraftingAutomatContainer(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
-        this(id, playerInventory, (CraftingAutomatTileEntity) Minecraft.getInstance().level.getBlockEntity(extraData.readBlockPos()));
+        this(id, playerInventory, (CraftingAutomatBlockEntity) Minecraft.getInstance().level.getBlockEntity(extraData.readBlockPos()));
     }
     
-    public CraftingAutomatContainer(int id, Inventory playerInventory, CraftingAutomatTileEntity te) {
+    public CraftingAutomatContainer(int id, Inventory playerInventory, CraftingAutomatBlockEntity te) {
         super(CraftingAutomat.MenuTypes.autocrafter, id);
         this.tile = te;
 
@@ -78,8 +78,8 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public CraftingAutomatTileEntity.CraftingFlag getCraftingFlag() {
-        return CraftingAutomatTileEntity.CraftingFlag.fromIndex(craftingFlagHolder.get());
+    public CraftingAutomatBlockEntity.CraftingFlag getCraftingFlag() {
+        return CraftingAutomatBlockEntity.CraftingFlag.fromIndex(craftingFlagHolder.get());
     }
 
     @Override
@@ -157,9 +157,9 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
     }
 
     private static class SlotItemHandlerUpdatesRecipe extends SlotItemHandler {
-        private final CraftingAutomatTileEntity tile;
+        private final CraftingAutomatBlockEntity tile;
 
-        public SlotItemHandlerUpdatesRecipe(CraftingAutomatTileEntity te, IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+        public SlotItemHandlerUpdatesRecipe(CraftingAutomatBlockEntity te, IItemHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
             tile = te;
         }
@@ -173,9 +173,9 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
     }
 
     private static class SlotItemHandlerUpdatesHelper extends SlotItemHandler {
-        private final CraftingAutomatTileEntity tile;
+        private final CraftingAutomatBlockEntity tile;
 
-        public SlotItemHandlerUpdatesHelper(CraftingAutomatTileEntity te, IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+        public SlotItemHandlerUpdatesHelper(CraftingAutomatBlockEntity te, IItemHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
             tile = te;
         }

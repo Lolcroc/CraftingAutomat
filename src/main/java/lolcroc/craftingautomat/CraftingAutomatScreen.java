@@ -62,8 +62,8 @@ public class CraftingAutomatScreen extends AbstractContainerScreen<CraftingAutom
         blit(stack, i + 89, j + 34, 176, 0, w + 1, 16);
 
         // Draw crafting flag marker and tooltip
-        CraftingAutomatTileEntity.CraftingFlag flag = menu.getCraftingFlag();
-        if (flag != CraftingAutomatTileEntity.CraftingFlag.NONE) {
+        CraftingAutomatBlockEntity.CraftingFlag flag = menu.getCraftingFlag();
+        if (flag != CraftingAutomatBlockEntity.CraftingFlag.NONE) {
             blit(stack, i + 142, j + 26, 176 + 8 * (flag.getIndex() - 1), 17, 8, 8);
 
             if (isHovering(142, 26, 8, 8, mouseX, mouseY)) {

@@ -26,9 +26,10 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityInject;
-import net.minecraftforge.fmllegacy.network.NetworkHooks;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
@@ -40,8 +41,7 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
     public static final String NAME = "autocrafter";
 
     // Local vars are fast
-    @CapabilityInject(IItemHandler.class)
-    private static Capability<IItemHandler> ITEM_HANDLER_CAPABILITY = null;
+    private static final Capability<IItemHandler> ITEM_HANDLER_CAPABILITY = CapabilityManager.get(new CapabilityToken<>(){});
 
     public static final ResourceLocation REGISTRY_NAME = new ResourceLocation(CraftingAutomat.MODID, NAME);
     public static final DirectionProperty FACING = DirectionalBlock.FACING;
@@ -71,12 +71,12 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
 
     @Nullable
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new CraftingAutomatTileEntity(pos, state);
+        return new CraftingAutomatBlockEntity(pos, state);
     }
 
     @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide || !state.getValue(ACTIVE) ? null : createTickerHelper(type, CraftingAutomat.BlockEntityTypes.autocrafter, CraftingAutomatTileEntity::serverTick);
+        return level.isClientSide || !state.getValue(ACTIVE) ? null : createTickerHelper(type, CraftingAutomat.BlockEntityTypes.autocrafter, CraftingAutomatBlockEntity::serverTick);
     }
 
     @Override
@@ -156,15 +156,15 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
         }, () -> 0);
     }
 
-    private static void safeConsume(Level level, BlockPos pos, Consumer<CraftingAutomatTileEntity> c) {
+    private static void safeConsume(Level level, BlockPos pos, Consumer<CraftingAutomatBlockEntity> c) {
         BlockEntity tile = level.getBlockEntity(pos);
-        if (tile instanceof CraftingAutomatTileEntity) {
-            c.accept((CraftingAutomatTileEntity) tile);
+        if (tile instanceof CraftingAutomatBlockEntity) {
+            c.accept((CraftingAutomatBlockEntity) tile);
         }
     }
 
-    private static <T> T safeFunc(Level level, BlockPos pos, Function<CraftingAutomatTileEntity, T> f, Supplier<T> other) {
+    private static <T> T safeFunc(Level level, BlockPos pos, Function<CraftingAutomatBlockEntity, T> f, Supplier<T> other) {
         BlockEntity tile = level.getBlockEntity(pos);
-        return tile instanceof CraftingAutomatTileEntity ? f.apply((CraftingAutomatTileEntity) tile) : other.get();
+        return tile instanceof CraftingAutomatBlockEntity ? f.apply((CraftingAutomatBlockEntity) tile) : other.get();
     }
 }
