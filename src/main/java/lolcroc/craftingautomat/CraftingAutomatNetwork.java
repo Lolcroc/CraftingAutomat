@@ -59,8 +59,8 @@ public class CraftingAutomatNetwork {
         }
 
         public SOverrideConfigPacket(ForgeConfigSpec.IntValue ... vals) {
-            for (int i = 0; i < vals.length; i++) {
-                values.put(vals[i].getPath(), vals[i].get());
+            for (ForgeConfigSpec.IntValue val : vals) {
+                values.put(val.getPath(), val.get());
             }
         }
 

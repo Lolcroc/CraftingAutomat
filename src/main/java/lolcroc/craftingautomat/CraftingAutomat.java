@@ -11,7 +11,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -51,7 +50,7 @@ public class CraftingAutomat
     
     @SubscribeEvent
     public static void setup(FMLCommonSetupEvent event) {
-        DistExecutor.runWhenOn(Dist.CLIENT, () -> () -> MenuScreens.register(CraftingAutomat.MenuTypes.autocrafter, CraftingAutomatScreen::new));
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> MenuScreens.register(CraftingAutomat.MenuTypes.autocrafter, CraftingAutomatScreen::new));
         CraftingAutomatNetwork.registerMessages();
     }
     
@@ -74,14 +73,4 @@ public class CraftingAutomat
     public static void registerItems(RegistryEvent.Register<Item> event) {
         event.getRegistry().register(new BlockItem(CraftingAutomat.Blocks.autocrafter, new Item.Properties().tab(CreativeModeTab.TAB_REDSTONE)).setRegistryName(CraftingAutomat.Blocks.autocrafter.getRegistryName()));
     }
-
-    // Registered non-statically on the forge event bus
-    // Check the logical side for sending a packet from server (which can be physical CLIENT/SERVER)
-    @SubscribeEvent
-    public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!event.getEntity().level.isClientSide) {
-            CraftingAutomatNetwork.overrideClientConfigs(CraftingAutomatConfig.COOLDOWN_TICKS, CraftingAutomatConfig.CRAFTING_TICKS);
-        }
-    }
-
 }
