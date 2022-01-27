@@ -158,17 +158,6 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
         return craftingFlag == CraftingFlag.READY;
     }
 
-//    @Override
-//    public void clearRemoved() {
-//        super.clearRemoved();
-//        updateRecipe();
-//    }
-
-    /*
-    TODO this method is dead.
-    See https://github.com/MinecraftForge/MinecraftForge/issues/7926 and
-    https://github.com/MinecraftForge/MinecraftForge/pull/7946 for a PR that fixes it
-     */
     @Override
     public void onLoad() {
         super.onLoad();
@@ -275,7 +264,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
 
     @Override
     public void saveAdditional(CompoundTag compound) {
-        super.save(compound);
+        super.saveAdditional(compound);
 
         bufferHandler.ifPresent(h -> compound.put("Buffer", ((INBTSerializable<CompoundTag>) h).serializeNBT()));
         matrixHandler.ifPresent(h -> compound.put("Matrix", ((INBTSerializable<CompoundTag>) h).serializeNBT()));

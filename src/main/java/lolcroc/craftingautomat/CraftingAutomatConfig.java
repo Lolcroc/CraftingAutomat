@@ -43,7 +43,7 @@ public class CraftingAutomatConfig {
                 Synchronize tick settings to players.
                 Disabling this setting may cause visual glitches for other players in crafting progress.
                 Other players may need to manually alter their tick settings to match the server host.""")
-                .define("syncronizeTickSettings", true);
+                .define("synchronizeTickSettings", true);
         COMMON_BUILDER.pop();
 
         COMMON_CONFIG = COMMON_BUILDER.build();
