@@ -2,7 +2,7 @@ package lolcroc.craftingautomat;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
-import mezz.jei.api.constants.VanillaRecipeCategoryUid;
+import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.minecraft.resources.ResourceLocation;
@@ -16,11 +16,11 @@ public class CraftingAutomatJEIPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        registration.addRecipeTransferHandler(CraftingAutomatContainer.class, VanillaRecipeCategoryUid.CRAFTING, 1, 9, 10, 45);
+        registration.addRecipeTransferHandler(CraftingAutomatContainer.class, RecipeTypes.CRAFTING, 1, 9, 10, 45);
     }
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        registration.addRecipeClickArea(CraftingAutomatScreen.class, 88, 32, 28, 23, VanillaRecipeCategoryUid.CRAFTING);
+        registration.addRecipeClickArea(CraftingAutomatScreen.class, 88, 32, 28, 23, RecipeTypes.CRAFTING);
     }
 }

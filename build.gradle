@@ -30,7 +30,7 @@ minecraft {
     //
     // Use non-default mappings at your own risk. They may not always work.
     // Simply re-run your setup task after changing the mappings to update your workspace.
-    mappings channel: 'official', version: '1.18.1' // Official has no parameter names
+    mappings channel: 'official', version: '1.18.2' // Official has no parameter names
     // mappings channel: 'snapshot', version: '20200514-1.16'
 
     // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg') // Currently, this location cannot be changed from the default.
@@ -120,8 +120,8 @@ repositories {
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.18.1-39.0.45'
+    minecraft 'net.minecraftforge:forge:1.18.2-40.0.22'
 
-    compileOnly fg.deobf("mezz.jei:jei-1.18.1:9.1.0.47:api") // JEI API
-    runtimeOnly fg.deobf("mezz.jei:jei-1.18.1:9.1.0.47") // JEI
+    compileOnly fg.deobf("mezz.jei:jei-1.18.2:9.5.3.143:api") // JEI API
+    runtimeOnly fg.deobf("mezz.jei:jei-1.18.2:9.5.3.143") // JEI
 }
