@@ -7,7 +7,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.ContainerHelper;
@@ -75,7 +74,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
 
         CraftingFlag() {
             List<Component> list = Lists.newArrayList();
-            list.add((new TranslatableComponent(toString())).withStyle(ChatFormatting.GRAY));
+            list.add(Component.translatable(toString()).withStyle(ChatFormatting.GRAY));
             displayTags = list;
         }
 
@@ -133,7 +132,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
             new CraftingInventoryWrapper(matrixHandler.orElse(EMPTYHANDLER)));
 
     public CraftingAutomatBlockEntity(BlockPos pos, BlockState state) {
-        super(CraftingAutomat.BlockEntityTypes.autocrafter, pos, state);
+        super(CraftingAutomat.AUTOCRAFTER_BLOCK_ENTITY.get(), pos, state);
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, CraftingAutomatBlockEntity entity) {
@@ -215,7 +214,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
         return recipeUsed.map(r -> itemHelper.getBiggestCraftableStack(r, null)).orElse(0);
     }
 
-    private static final Component DEFAULT_NAME = new TranslatableComponent("container." + CraftingAutomatBlock.REGISTRY_NAME.toString());
+    private static final Component DEFAULT_NAME = Component.translatable("container." + CraftingAutomatBlock.REGISTRY_NAME.toString());
 
     @Nonnull
     @Override

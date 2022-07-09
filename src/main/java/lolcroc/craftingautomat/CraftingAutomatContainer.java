@@ -26,7 +26,7 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
     }
     
     public CraftingAutomatContainer(int id, Inventory playerInventory, CraftingAutomatBlockEntity te) {
-        super(CraftingAutomat.MenuTypes.autocrafter, id);
+        super(CraftingAutomat.AUTOCRAFTER_MENU.get(), id);
         this.tile = te;
 
         // Result slot
@@ -84,7 +84,7 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(tile.getLevel(), tile.getBlockPos()), player, CraftingAutomat.Blocks.autocrafter);
+        return stillValid(ContainerLevelAccess.create(tile.getLevel(), tile.getBlockPos()), player, CraftingAutomat.AUTOCRAFTER_BLOCK.get());
     }
 
     @Override

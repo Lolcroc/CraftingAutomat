@@ -52,7 +52,6 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
         // RedstoneConductor : Prevents incoming redstone signals to propagate to adjacent blocks
         super(BlockBehaviour.Properties.of(Material.STONE).sound(SoundType.STONE)
                 .strength(3.5F).isRedstoneConductor((state, getter, pos) -> false));
-        this.setRegistryName(REGISTRY_NAME);
         this.registerDefaultState(stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(ACTIVE, Boolean.FALSE)
@@ -76,7 +75,7 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
 
     @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide || !state.getValue(ACTIVE) ? null : createTickerHelper(type, CraftingAutomat.BlockEntityTypes.autocrafter, CraftingAutomatBlockEntity::serverTick);
+        return level.isClientSide || !state.getValue(ACTIVE) ? null : createTickerHelper(type, CraftingAutomat.AUTOCRAFTER_BLOCK_ENTITY.get(), CraftingAutomatBlockEntity::serverTick);
     }
 
     @Override
