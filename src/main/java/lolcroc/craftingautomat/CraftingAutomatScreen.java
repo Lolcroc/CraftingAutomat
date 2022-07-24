@@ -11,41 +11,36 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 @OnlyIn(Dist.CLIENT)
-public class CraftingAutomatScreen extends AbstractContainerScreen<CraftingAutomatContainer> {
+public class CraftingAutomatScreen extends AbstractContainerScreen<CraftingAutomatMenu> {
 
     public static final int WIDTH = 176;
     public static final int HEIGHT = 197;
     
     private static final ResourceLocation TEXTURE = new ResourceLocation(CraftingAutomat.MODID, "textures/gui/container/crafting_automat.png");
 
-    private static final Supplier<Integer> CRAFTING_TICKS = () -> CraftingAutomatConfig.Client.get(CraftingAutomatConfig.CRAFTING_TICKS);
-    private static final Supplier<Integer> COOLDOWN_TICKS = () -> CraftingAutomatConfig.Client.get(CraftingAutomatConfig.COOLDOWN_TICKS);
-
-    public CraftingAutomatScreen(final CraftingAutomatContainer container, Inventory inventory, Component title) {
+    public CraftingAutomatScreen(final CraftingAutomatMenu container, Inventory inventory, Component title) {
         super(container, inventory, title);
 
         imageWidth = WIDTH;
         imageHeight = HEIGHT;
 
-        titleLabelX = 28;
+        titleLabelX = 29;
     }
 
-    private int getProgressWidth() {
-        int ticks = menu.getProgress();
+//    public void test() {
+//        DynamicTexture texture = new DynamicTexture(256, 256, true);  // true for calloc
+//
+////        texture.setPixels(nativeimage);
+//        texture.upload(); // If change something through setPixels
+//
+//        minecraft.getTextureManager().register(TEXTURE, texture); // autocloses
+//    }
 
-        if (ticks <= 0) {
-            return 0; // Easy return
-        }
-        else if (ticks > CRAFTING_TICKS.get()) {
-            return (COOLDOWN_TICKS.get() + CRAFTING_TICKS.get() - ticks) * 24 / COOLDOWN_TICKS.get();
-        }
-        else {
-            return ticks * 24 / CRAFTING_TICKS.get();
-        }
-    }
+    private static final ResourceLocation CRAFTING_TABLE = new ResourceLocation("textures/gui/container/crafting_table.png");
+    private static final ResourceLocation CHEST = new ResourceLocation("textures/gui/container/generic_54.png");
+    private static final ResourceLocation FURNACE = new ResourceLocation("textures/gui/container/furnace.png");
 
     // Background
     @Override
@@ -53,17 +48,30 @@ public class CraftingAutomatScreen extends AbstractContainerScreen<CraftingAutom
         renderBackground(stack); // Do I need this?
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+//        RenderSystem.setShaderTexture(0, TEXTURE);
         int i = leftPos;
         int j = topPos;
-        blit(stack, i, j, 0, 0, imageWidth, imageHeight);
-        
-        int w = getProgressWidth();
-        blit(stack, i + 89, j + 34, 176, 0, w + 1, 16);
+//        blit(stack, i, j, 0, 0, imageWidth, imageHeight);
+
+        RenderSystem.setShaderTexture(0, CRAFTING_TABLE);
+        blit(stack, i, j, 0, 0, imageWidth, 101);
+
+        RenderSystem.setShaderTexture(0, CHEST);
+        for (int k = 0; k < 13; k++) {
+            blit(stack, i, j + 101 + k, 0, 138, imageWidth, 1);
+        }
+        blit(stack, i, j + 114, 0, 139, imageWidth, 83);
+
+        // Draw progress bar
+        RenderSystem.setShaderTexture(0, FURNACE);
+//        blit(stack, i + 89, j + 34, 176, 0, menu.getProgressWidth() + 1, 16);
+        blit(stack, i + 89, j + 34, 79, 34, 25, 16);
+        blit(stack, i + 89, j + 34, 176, 14, menu.getProgressWidth() + 1, 16);
 
         // Draw crafting flag marker and tooltip
         CraftingAutomatBlockEntity.CraftingFlag flag = menu.getCraftingFlag();
         if (flag != CraftingAutomatBlockEntity.CraftingFlag.NONE) {
+            RenderSystem.setShaderTexture(0, TEXTURE);
             blit(stack, i + 142, j + 26, 176 + 8 * (flag.getIndex() - 1), 17, 8, 8);
 
             if (isHovering(142, 26, 8, 8, mouseX, mouseY)) {
