@@ -39,7 +39,7 @@ public class CraftingAutomat
 
     public static final RegistryObject<Block> AUTOCRAFTER_BLOCK = BLOCKS.register(NAME, CraftingAutomatBlock::new);
     public static final RegistryObject<BlockEntityType<CraftingAutomatBlockEntity>> AUTOCRAFTER_BLOCK_ENTITY = BLOCK_ENTITIES.register(NAME, () -> BlockEntityType.Builder.of(CraftingAutomatBlockEntity::new, AUTOCRAFTER_BLOCK.get()).build(null));
-    public static final RegistryObject<MenuType<CraftingAutomatContainer>> AUTOCRAFTER_MENU = MENUS.register(NAME, () -> IForgeMenuType.create(CraftingAutomatContainer::new));
+    public static final RegistryObject<MenuType<CraftingAutomatMenu>> AUTOCRAFTER_MENU = MENUS.register(NAME, () -> IForgeMenuType.create(CraftingAutomatMenu::new));
     public static final RegistryObject<Item> AUTOCRAFTER_ITEM = ITEMS.register(NAME, () -> new BlockItem(AUTOCRAFTER_BLOCK.get(), new Item.Properties().tab(CreativeModeTab.TAB_REDSTONE)));
     
     public CraftingAutomat() {
@@ -57,6 +57,5 @@ public class CraftingAutomat
     @SubscribeEvent
     public static void setup(FMLCommonSetupEvent event) {
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> MenuScreens.register(AUTOCRAFTER_MENU.get(), CraftingAutomatScreen::new));
-        CraftingAutomatNetwork.registerMessages();
     }
 }

@@ -16,7 +16,7 @@ public class CraftingAutomatJEIPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        registration.addRecipeTransferHandler(CraftingAutomatContainer.class, CraftingAutomat.AUTOCRAFTER_MENU.get(), RecipeTypes.CRAFTING, 1, 9, 10, 45);
+        registration.addRecipeTransferHandler(CraftingAutomatMenu.class, CraftingAutomat.AUTOCRAFTER_MENU.get(), RecipeTypes.CRAFTING, 1, 9, 10, 45);
     }
 
     @Override

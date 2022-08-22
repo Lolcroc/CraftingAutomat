@@ -13,7 +13,10 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.StackedContents;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.RecipeHolder;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
@@ -48,17 +51,6 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     protected StackedContents itemHelper = new StackedContents();
     protected CraftingRecipe recipeUsed;
     protected int ticksActive;
-    DataSlot ticksHolder = new DataSlot() {
-        @Override
-        public int get() {
-            return ticksActive;
-        }
-
-        @Override
-        public void set(int value) {
-            ticksActive = value;
-        }
-    };
 
     enum CraftingFlag {
         NONE, READY, MISSING, INVALID;
@@ -94,16 +86,49 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
         }
     }
 
-    private CraftingFlag craftingFlag = CraftingFlag.NONE;
-    protected DataSlot craftingFlagHolder = new DataSlot() {
+    protected CraftingFlag craftingFlag = CraftingFlag.NONE;
+
+    protected int crafingTicks;  // ONLY used logical client
+    protected int cooldownTicks;  // Only used logical client
+
+    protected final ContainerData dataAccess = new ContainerData() {
         @Override
-        public int get() {
-            return craftingFlag.getIndex();
+        public int get(int id) {  // Always on server
+            switch (id) {
+                case 0:
+                    return craftingFlag.getIndex();
+                case 1:
+                    return ticksActive;
+                case 2:
+                    return getCraftingTicks();
+                case 3:
+                    return getCooldownTicks();
+                default:
+                    return 0;
+            }
         }
 
         @Override
-        public void set(int value) {
-            craftingFlag = CraftingFlag.fromIndex(value);
+        public void set(int id, int value) {  // Always on client
+            switch (id) {
+                case 0:
+                    craftingFlag = CraftingFlag.fromIndex(value);
+                    break;
+                case 1:
+                    ticksActive = value;
+                    break;
+                case 2:
+                    crafingTicks = value;
+                    break;
+                case 3:
+                    cooldownTicks = value;
+                    break;
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return 4;
         }
     };
 
@@ -133,11 +158,19 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
         super(CraftingAutomat.AUTOCRAFTER_BLOCK_ENTITY.get(), pos, state);
     }
 
+    public static int getCraftingTicks() {
+        return CraftingAutomatConfig.CRAFTING_TICKS.get();
+    }
+
+    public static int getCooldownTicks() {
+        return CraftingAutomatConfig.COOLDOWN_TICKS.get();
+    }
+
     public static void serverTick(Level level, BlockPos pos, BlockState state, CraftingAutomatBlockEntity entity) {
         entity.ticksActive++;
 
-        if ((entity.ticksActive <= CraftingAutomatConfig.CRAFTING_TICKS.get() && !entity.isReady()) ||
-                entity.ticksActive >= CraftingAutomatConfig.CRAFTING_TICKS.get() + CraftingAutomatConfig.COOLDOWN_TICKS.get()) {
+        if ((entity.ticksActive <= getCraftingTicks() && !entity.isReady()) ||
+                entity.ticksActive >= getCraftingTicks() + getCooldownTicks()) {
             entity.ticksActive = 0;
             level.setBlockAndUpdate(pos, entity.getBlockState().setValue(CraftingAutomatBlock.ACTIVE, Boolean.FALSE));
         } else if (entity.ticksActive == CraftingAutomatConfig.CRAFTING_TICKS.get()) {
@@ -221,7 +254,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
         return recipeUsed != null ? itemHelper.getBiggestCraftableStack(recipeUsed, null) : 0;
     }
 
-    private static final Component DEFAULT_NAME = Component.translatable("container." + CraftingAutomatBlock.REGISTRY_NAME.toString());
+    private static final Component DEFAULT_NAME = Component.translatable("container.crafting");
 
     @Nonnull
     @Override
@@ -231,7 +264,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
 
     @Override
     public AbstractContainerMenu createMenu(int id, @Nonnull Inventory inventory, @Nonnull Player player) {
-        return BaseContainerBlockEntity.canUnlock(player, this.lock, this.getDisplayName()) ? new CraftingAutomatContainer(id, inventory, this) : null;
+        return BaseContainerBlockEntity.canUnlock(player, this.lock, this.getDisplayName()) ? new CraftingAutomatMenu(id, inventory, this) : null;
     }
 
     public boolean hasCustomName() {
@@ -246,7 +279,6 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     public void load(CompoundTag compound) {
         super.load(compound);
 
-        // Backwards compatibility
         ((INBTSerializable<CompoundTag>) bufferHandler).deserializeNBT(compound.getCompound("Buffer"));
         ((INBTSerializable<CompoundTag>) matrixHandler).deserializeNBT(compound.getCompound("Matrix"));
 

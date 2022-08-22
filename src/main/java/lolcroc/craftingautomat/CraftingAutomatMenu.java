@@ -6,7 +6,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
-import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
@@ -15,20 +14,18 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftingAutomatContainer extends AbstractContainerMenu {
+public class CraftingAutomatMenu extends AbstractContainerMenu {
 
     private final CraftingAutomatBlockEntity tile;
-    private final DataSlot ticksHolder;
-    private final DataSlot craftingFlagHolder;
     
     // Only on client
-    public CraftingAutomatContainer(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
+    public CraftingAutomatMenu(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
         this(id, playerInventory, (CraftingAutomatBlockEntity) Minecraft.getInstance().level.getBlockEntity(extraData.readBlockPos()));
     }
     
-    public CraftingAutomatContainer(int id, Inventory playerInventory, CraftingAutomatBlockEntity te) {
+    public CraftingAutomatMenu(int id, Inventory playerInventory, CraftingAutomatBlockEntity te) {
         super(CraftingAutomat.AUTOCRAFTER_MENU.get(), id);
-        this.tile = te;
+        tile = te;
 
         // Result slot
         te.resultOptional.ifPresent(h -> {
@@ -41,7 +38,7 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
                 int finalI = i;
                 int finalJ = j;
                 te.matrixOptional.ifPresent(h -> {
-                    addSlot(new SlotItemHandler(h, finalJ + finalI * 3, 30 + finalJ * 18, 17 + finalI * 18));
+                    addSlot(new BetterSlotItemHandler(h, finalJ + finalI * 3, 30 + finalJ * 18, 17 + finalI * 18));
                 });
             }
         }
@@ -50,37 +47,43 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
         for (int l = 0; l < 9; ++l) {
             int finalL = l;
             te.bufferOptional.ifPresent(h -> {
-                addSlot(new SlotItemHandler(h, finalL, 8 + finalL * 18, 84));
+                addSlot(new BetterSlotItemHandler(h, finalL, 8 + finalL * 18, 84));
             });
         }
 
         // Player inventory
         for (int k = 0; k < 3; ++k) {
             for (int i1 = 0; i1 < 9; ++i1) {
-                this.addSlot(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 115 + k * 18));
+                addSlot(new Slot(playerInventory, i1 + k * 9 + 9, 8 + i1 * 18, 115 + k * 18));
             }
         }
 
         // Player hotbar
         for (int l = 0; l < 9; ++l) {
-            this.addSlot(new Slot(playerInventory, l, 8 + l * 18, 173));
+            addSlot(new Slot(playerInventory, l, 8 + l * 18, 173));
         }
 
-        // Adds trackers for ticksActive and craftingFlag
-        ticksHolder = te.ticksHolder;
-        craftingFlagHolder = te.craftingFlagHolder;
-        addDataSlot(ticksHolder);
-        addDataSlot(craftingFlagHolder);
+        addDataSlots(te.dataAccess);
     }
     
     @OnlyIn(Dist.CLIENT)
-    public int getProgress() {
-        return ticksHolder.get();
+    public int getProgressWidth() {
+        int ticks = tile.ticksActive;
+
+        if (ticks <= 0) {
+            return 0; // Easy return
+        }
+        else if (ticks > tile.crafingTicks) {
+            return (tile.cooldownTicks + tile.crafingTicks - ticks) * 24 / tile.cooldownTicks;
+        }
+        else {
+            return ticks * 24 / tile.crafingTicks;
+        }
     }
 
     @OnlyIn(Dist.CLIENT)
     public CraftingAutomatBlockEntity.CraftingFlag getCraftingFlag() {
-        return CraftingAutomatBlockEntity.CraftingFlag.fromIndex(craftingFlagHolder.get());
+        return tile.craftingFlag;
     }
 
     @Override
