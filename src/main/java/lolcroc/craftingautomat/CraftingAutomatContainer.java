@@ -13,6 +13,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftingAutomatContainer extends AbstractContainerMenu {
 
@@ -30,7 +31,7 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
         this.tile = te;
 
         // Result slot
-        te.resultHandler.ifPresent(h -> {
+        te.resultOptional.ifPresent(h -> {
             addSlot(new CraftingAutomatResultSlot(h, playerInventory.player, te, 0, 124, 35));
         });
 
@@ -39,8 +40,8 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
             for (int j = 0; j < 3; ++j) {
                 int finalI = i;
                 int finalJ = j;
-                te.matrixHandler.ifPresent(h -> {
-                    addSlot(new SlotItemHandlerUpdatesRecipe(te, h, finalJ + finalI * 3, 30 + finalJ * 18, 17 + finalI * 18));
+                te.matrixOptional.ifPresent(h -> {
+                    addSlot(new SlotItemHandler(h, finalJ + finalI * 3, 30 + finalJ * 18, 17 + finalI * 18));
                 });
             }
         }
@@ -48,8 +49,8 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
         // Crafting buffer
         for (int l = 0; l < 9; ++l) {
             int finalL = l;
-            te.bufferHandler.ifPresent(h -> {
-                addSlot(new SlotItemHandlerUpdatesHelper(te, h, finalL, 8 + finalL * 18, 84));
+            te.bufferOptional.ifPresent(h -> {
+                addSlot(new SlotItemHandler(h, finalL, 8 + finalL * 18, 84));
             });
         }
 
@@ -156,35 +157,34 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
         return itemstack;
     }
 
-    private static class SlotItemHandlerUpdatesRecipe extends SlotItemHandler {
-        private final CraftingAutomatBlockEntity tile;
+    private static class BetterSlotItemHandler extends SlotItemHandler {
 
-        public SlotItemHandlerUpdatesRecipe(CraftingAutomatBlockEntity te, IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+        public BetterSlotItemHandler(UnsafeItemStackHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
-            tile = te;
         }
 
         @Override
-        public void setChanged() {
-            tile.updateRecipe();
-            tile.setChanged();
-            super.setChanged();
-        }
-    }
+        public int getMaxStackSize(@NotNull ItemStack stack) {
+            ItemStack maxAdd = stack.copy();
+            int maxInput = stack.getMaxStackSize();
+            maxAdd.setCount(maxInput);
 
-    private static class SlotItemHandlerUpdatesHelper extends SlotItemHandler {
-        private final CraftingAutomatBlockEntity tile;
+            int index = getSlotIndex();
+            UnsafeItemStackHandler handler = getItemHandler();
+            ItemStack currentStack = handler.getStackInSlot(index);
 
-        public SlotItemHandlerUpdatesHelper(CraftingAutomatBlockEntity te, IItemHandler itemHandler, int index, int xPosition, int yPosition) {
-            super(itemHandler, index, xPosition, yPosition);
-            tile = te;
+            handler.unsafeSetStackInSlot(index, ItemStack.EMPTY);
+
+            ItemStack remainder = handler.insertItem(index, maxAdd, true);
+
+            handler.unsafeSetStackInSlot(index, currentStack);
+
+            return maxInput - remainder.getCount();
         }
 
         @Override
-        public void setChanged() {
-            tile.updateHelper();
-            tile.setChanged();
-            super.setChanged();
+        public UnsafeItemStackHandler getItemHandler() {
+            return (UnsafeItemStackHandler) super.getItemHandler();
         }
     }
 

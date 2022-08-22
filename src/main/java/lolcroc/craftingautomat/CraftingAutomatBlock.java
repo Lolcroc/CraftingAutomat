@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.RecipeBook;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
@@ -96,7 +97,9 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
             safeConsume(level, pos, t -> {
-                NetworkHooks.openScreen((ServerPlayer) player, t, pos);
+                ServerPlayer serverPlayer = (ServerPlayer) player;
+                RecipesSavedData.computeIfAbsent(level.getServer()).updateRecipes(serverPlayer.getRecipeBook());
+                NetworkHooks.openScreen(serverPlayer, t, pos);
                 player.awardStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
             });
         }

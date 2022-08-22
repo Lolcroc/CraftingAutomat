@@ -3,9 +3,8 @@ package lolcroc.craftingautomat;
 import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.inventory.StackedContentsCompatible;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
 
-public class BufferHandler extends ItemStackHandler implements StackedContentsCompatible {
+public class BufferHandler extends UnsafeItemStackHandler implements StackedContentsCompatible {
 
     private final CraftingAutomatBlockEntity tile;
 

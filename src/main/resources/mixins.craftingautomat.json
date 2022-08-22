@@ -1,0 +1,11 @@
+{
+  "package": "lolcroc.craftingautomat.mixin",
+  "mixins": [
+    "RecipeBookAccessor"
+  ],
+  "refmap": "mixins.craftingautomat.refmap.json",
+  "required": true,
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

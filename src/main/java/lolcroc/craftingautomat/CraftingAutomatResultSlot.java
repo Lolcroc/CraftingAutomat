@@ -30,7 +30,7 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
     public ItemStack remove(int amount) {
         ItemStack stack = getItem();
         amountCrafted += stack.getCount(); // Wow vanilla actually does this wrong
-        tile.resultHandler.ifPresent(h -> h.setStackInSlot(0, ItemStack.EMPTY));
+        tile.resultOptional.ifPresent(h -> h.setStackInSlot(0, ItemStack.EMPTY));
         return stack;
     }
 
@@ -64,7 +64,7 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
         //Fire Item.onCrafting and Forge crafting hook
         if (amountCrafted > 0) {
             stack.onCraftedBy(player.level, player, amountCrafted);
-            tile.matrixWrapper.ifPresent(h -> ForgeEventFactory.firePlayerCraftingEvent(player, stack, h));
+            tile.matrixWrapperOptional.ifPresent(h -> ForgeEventFactory.firePlayerCraftingEvent(player, stack, h));
         }
         amountCrafted = 0;
         

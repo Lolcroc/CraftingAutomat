@@ -1,8 +1,6 @@
 package lolcroc.craftingautomat;
 
-import net.minecraftforge.items.ItemStackHandler;
-
-public class MatrixHandler extends ItemStackHandler {
+public class MatrixHandler extends UnsafeItemStackHandler {
 
     private final CraftingAutomatBlockEntity tile;
 
