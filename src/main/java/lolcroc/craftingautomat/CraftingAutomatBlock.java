@@ -96,9 +96,7 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
             safeConsume(level, pos, t -> {
-                ServerPlayer serverPlayer = (ServerPlayer) player;
-                RecipesSavedData.computeIfAbsent(level.getServer()).updateRecipes(serverPlayer.getRecipeBook());
-                NetworkHooks.openScreen(serverPlayer, t, pos);
+                NetworkHooks.openScreen((ServerPlayer) player, t, pos);
                 player.awardStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
             });
         }

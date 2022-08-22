@@ -1,5 +1,6 @@
 {
     "block.craftingautomat.autocrafter": "Fabricador Automático",
+    "container.craftingautomat:autocrafter": "Fabricação",
     "container.craftingautomat:autocrafter.flag.ready": "Auto-Fabricação pronta",
     "container.craftingautomat:autocrafter.flag.missing": "Ingredientes ausentes",
     "container.craftingautomat:autocrafter.flag.invalid": "Auto-Fabricação não suportada"

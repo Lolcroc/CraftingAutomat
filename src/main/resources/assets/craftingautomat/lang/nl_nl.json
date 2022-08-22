@@ -1,5 +1,6 @@
 {
-    "block.craftingautomat.autocrafter": "Automatische bewerker",
+    "block.craftingautomat.autocrafter": "Bewerkautomaat",
+    "container.craftingautomat:autocrafter": "Vervaardiging",
     "container.craftingautomat:autocrafter.flag.ready": "Automatisch maken gereed",
     "container.craftingautomat:autocrafter.flag.missing": "Ontbrekende ingrediënten",
     "container.craftingautomat:autocrafter.flag.invalid": "Automatisch maken niet ondersteund"
