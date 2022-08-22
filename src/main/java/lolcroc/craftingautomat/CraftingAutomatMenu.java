@@ -10,45 +10,35 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftingAutomatMenu extends AbstractContainerMenu {
 
-    private final CraftingAutomatBlockEntity tile;
+    private final CraftingAutomatBlockEntity automatEntity;
     
     // Only on client
     public CraftingAutomatMenu(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
         this(id, playerInventory, (CraftingAutomatBlockEntity) Minecraft.getInstance().level.getBlockEntity(extraData.readBlockPos()));
     }
     
-    public CraftingAutomatMenu(int id, Inventory playerInventory, CraftingAutomatBlockEntity te) {
+    public CraftingAutomatMenu(int id, Inventory playerInventory, CraftingAutomatBlockEntity be) {
         super(CraftingAutomat.AUTOCRAFTER_MENU.get(), id);
-        tile = te;
+        automatEntity = be;
 
         // Result slot
-        te.resultOptional.ifPresent(h -> {
-            addSlot(new CraftingAutomatResultSlot(h, playerInventory.player, te, 0, 124, 35));
-        });
+        addSlot(new CraftingAutomatResultSlot(be.result, playerInventory.player, be, 0, 124, 35));
 
         // Crafting matrix
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                int finalI = i;
-                int finalJ = j;
-                te.matrixOptional.ifPresent(h -> {
-                    addSlot(new BetterSlotItemHandler(h, finalJ + finalI * 3, 30 + finalJ * 18, 17 + finalI * 18));
-                });
+                addSlot(new BetterSlotItemHandler(be.matrix, j + i * 3, 30 + j * 18, 17 + i * 18));
             }
         }
         
         // Crafting buffer
         for (int l = 0; l < 9; ++l) {
-            int finalL = l;
-            te.bufferOptional.ifPresent(h -> {
-                addSlot(new BetterSlotItemHandler(h, finalL, 8 + finalL * 18, 84));
-            });
+            addSlot(new BetterSlotItemHandler(be.buffer, l, 8 + l * 18, 84));
         }
 
         // Player inventory
@@ -63,32 +53,32 @@ public class CraftingAutomatMenu extends AbstractContainerMenu {
             addSlot(new Slot(playerInventory, l, 8 + l * 18, 173));
         }
 
-        addDataSlots(te.dataAccess);
+        addDataSlots(be.dataAccess);
     }
     
     @OnlyIn(Dist.CLIENT)
     public int getProgressWidth() {
-        int ticks = tile.ticksActive;
+        int ticks = automatEntity.ticksActive;
 
         if (ticks <= 0) {
             return 0; // Easy return
         }
-        else if (ticks > tile.crafingTicks) {
-            return (tile.cooldownTicks + tile.crafingTicks - ticks) * 24 / tile.cooldownTicks;
+        else if (ticks > automatEntity.crafingTicks) {
+            return (automatEntity.cooldownTicks + automatEntity.crafingTicks - ticks) * 24 / automatEntity.cooldownTicks;
         }
         else {
-            return ticks * 24 / tile.crafingTicks;
+            return ticks * 24 / automatEntity.crafingTicks;
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     public CraftingAutomatBlockEntity.CraftingFlag getCraftingFlag() {
-        return tile.craftingFlag;
+        return automatEntity.craftingFlag;
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(tile.getLevel(), tile.getBlockPos()), player, CraftingAutomat.AUTOCRAFTER_BLOCK.get());
+        return stillValid(ContainerLevelAccess.create(automatEntity.getLevel(), automatEntity.getBlockPos()), player, CraftingAutomat.AUTOCRAFTER_BLOCK.get());
     }
 
     @Override
@@ -162,7 +152,7 @@ public class CraftingAutomatMenu extends AbstractContainerMenu {
 
     private static class BetterSlotItemHandler extends SlotItemHandler {
 
-        public BetterSlotItemHandler(UnsafeItemStackHandler itemHandler, int index, int xPosition, int yPosition) {
+        public BetterSlotItemHandler(ItemHandlers.Unsafe itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
@@ -173,7 +163,7 @@ public class CraftingAutomatMenu extends AbstractContainerMenu {
             maxAdd.setCount(maxInput);
 
             int index = getSlotIndex();
-            UnsafeItemStackHandler handler = getItemHandler();
+            ItemHandlers.Unsafe handler = getItemHandler();
             ItemStack currentStack = handler.getStackInSlot(index);
 
             handler.unsafeSetStackInSlot(index, ItemStack.EMPTY);
@@ -186,8 +176,8 @@ public class CraftingAutomatMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public UnsafeItemStackHandler getItemHandler() {
-            return (UnsafeItemStackHandler) super.getItemHandler();
+        public ItemHandlers.Unsafe getItemHandler() {
+            return (ItemHandlers.Unsafe) super.getItemHandler();
         }
     }
 

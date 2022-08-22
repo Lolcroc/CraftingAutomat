@@ -133,26 +133,21 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     };
 
     // Inventory handlers for buffer, matrix and result slot separate
-    private final BufferHandler bufferHandler = new BufferHandler(this);
-    protected final LazyOptional<BufferHandler> bufferOptional = LazyOptional.of(() -> bufferHandler);
+    protected final ItemHandlers.Buffer buffer = new ItemHandlers.Buffer(this);
+    protected final ItemHandlers.Matrix matrix = new ItemHandlers.Matrix(this);
+    protected final ItemHandlers.Result result = new ItemHandlers.Result();
+    protected final IItemHandlerModifiable inventory = new CombinedInvWrapper(matrix, buffer);
+    protected final IItemHandler reversedBuffer = new ItemHandlers.Reversed(buffer);
+    protected final CraftingContainer matrixWrapper = new CraftingInventoryWrapper(matrix);
 
-    private final MatrixHandler matrixHandler = new MatrixHandler(this);
-    protected final LazyOptional<MatrixHandler> matrixOptional = LazyOptional.of(() -> matrixHandler);
-
-    private final ResultHandler resultHandler = new ResultHandler();
-    protected final LazyOptional<ResultHandler> resultOptional = LazyOptional.of(() -> resultHandler);
-
+    protected final LazyOptional<ItemHandlers.Buffer> bufferOptional = LazyOptional.of(() -> buffer);
+    protected final LazyOptional<ItemHandlers.Result> resultOptional = LazyOptional.of(() -> result);
     // Combined handler when face not specified (e.g. when breaking block)
-    private final IItemHandlerModifiable combinedHandler = new CombinedInvWrapper(matrixHandler, bufferHandler);
-    protected final LazyOptional<IItemHandlerModifiable> combinedOptional = LazyOptional.of(() -> combinedHandler);
+    protected final LazyOptional<IItemHandlerModifiable> inventoryOptional = LazyOptional.of(() -> inventory);
     // Reversed inventory wrapper for buffer access from bottom side
-
-    private final IItemHandler reversedBufferHandler = new ReversedInvWrapper(bufferHandler);
-    protected final LazyOptional<IItemHandler> reversedBufferOptional = LazyOptional.of(() -> reversedBufferHandler);
+    protected final LazyOptional<IItemHandler> reversedBufferOptional = LazyOptional.of(() -> reversedBuffer);
     // Wrapper for using recipe methods
 
-    private final CraftingContainer matrixWrapperHandler = new CraftingInventoryWrapper(matrixHandler);
-    protected final LazyOptional<CraftingContainer> matrixWrapperOptional = LazyOptional.of(() -> matrixWrapperHandler);
 
     public CraftingAutomatBlockEntity(BlockPos pos, BlockState state) {
         super(CraftingAutomat.AUTOCRAFTER_BLOCK_ENTITY.get(), pos, state);
@@ -175,8 +170,8 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
             level.setBlockAndUpdate(pos, entity.getBlockState().setValue(CraftingAutomatBlock.ACTIVE, Boolean.FALSE));
         } else if (entity.ticksActive == CraftingAutomatConfig.CRAFTING_TICKS.get()) {
             // Copy because crafting from buffer doesn't update the recipe output slot
-            ItemStack stack = entity.resultHandler.getStackInSlot(0).copy();
-            if (!stack.isEmpty()) ResultHandler.outputStack(entity, stack, false);
+            ItemStack stack = entity.result.getStackInSlot(0).copy();
+            if (!stack.isEmpty()) ItemHandlers.outputStack(entity, stack, false);
             entity.consumeIngredients(null);
         }
         entity.setChanged();
@@ -196,16 +191,14 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     public void invalidateCaps() {
         super.invalidateCaps();
         bufferOptional.invalidate();
-        matrixOptional.invalidate();
         resultOptional.invalidate();
-        combinedOptional.invalidate();
+        inventoryOptional.invalidate();
         reversedBufferOptional.invalidate();
-        matrixWrapperOptional.invalidate();
     }
 
     public void updateRecipe() {
         if (this.hasLevel() && !level.isClientSide) {
-            Optional<CraftingRecipe> optional = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, matrixWrapperHandler, level);
+            Optional<CraftingRecipe> optional = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, matrixWrapper, level);
             ItemStack output = ItemStack.EMPTY;
             CraftingRecipe newRecipe = null;
 
@@ -213,23 +206,23 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
                 CraftingRecipe recipe = optional.get();
 
                 if (recipe.isSpecial() || !level.getGameRules().getBoolean(GameRules.RULE_LIMITED_CRAFTING) || RecipesSavedData.computeIfAbsent(level.getServer()).contains(recipe)) {
-                    output = recipe.assemble(matrixWrapperHandler);
+                    output = recipe.assemble(matrixWrapper);
                     newRecipe = recipe;
                 }
             }
 
             recipeUsed = newRecipe;
-            resultHandler.setStackInSlot(0, output);
+            result.setStackInSlot(0, output);
             craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
         }
 //		CraftingAutomat.LOGGER.warn("Did update recipe");
     }
 
-    // Casts update recipe automatically
+    // Calls update recipe automatically
     @Override
     public void clearContent() {
-        for (int i = 0; i < combinedHandler.getSlots(); i++) {
-            combinedHandler.setStackInSlot(i, ItemStack.EMPTY);
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            inventory.setStackInSlot(i, ItemStack.EMPTY);
         }
     }
 
@@ -245,7 +238,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     }
     // Fired when the buffer changes
     public void updateHelper() {
-        bufferHandler.fillStackedContents(itemHelper);
+        buffer.fillStackedContents(itemHelper);
         craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
 //		CraftingAutomat.LOGGER.warn("Did update helper");
     }
@@ -279,8 +272,8 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     public void load(CompoundTag compound) {
         super.load(compound);
 
-        ((INBTSerializable<CompoundTag>) bufferHandler).deserializeNBT(compound.getCompound("Buffer"));
-        ((INBTSerializable<CompoundTag>) matrixHandler).deserializeNBT(compound.getCompound("Matrix"));
+        ((INBTSerializable<CompoundTag>) buffer).deserializeNBT(compound.getCompound("Buffer"));
+        ((INBTSerializable<CompoundTag>) matrix).deserializeNBT(compound.getCompound("Matrix"));
 
         if (compound.contains("CustomName", 8)) {
             customName = Component.Serializer.fromJson(compound.getString("CustomName"));
@@ -294,8 +287,8 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     public void saveAdditional(CompoundTag compound) {
         super.saveAdditional(compound);
 
-        compound.put("Buffer", ((INBTSerializable<CompoundTag>) bufferHandler).serializeNBT());
-        compound.put("Matrix", ((INBTSerializable<CompoundTag>) matrixHandler).serializeNBT());
+        compound.put("Buffer", ((INBTSerializable<CompoundTag>) buffer).serializeNBT());
+        compound.put("Matrix", ((INBTSerializable<CompoundTag>) matrix).serializeNBT());
 
         if (hasCustomName()) {
             compound.putString("CustomName", Component.Serializer.toJson(customName));
@@ -312,7 +305,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction facing) {
         if (!remove && capability == ITEM_HANDLER_CAPABILITY) {
             if (facing == null) {
-                return combinedOptional.cast(); // If null side; return normal buffer + crafting matrix
+                return inventoryOptional.cast(); // If null side; return normal buffer + crafting matrix
             } else if (facing == getBlockState().getValue(CraftingAutomatBlock.FACING)) {
                 return resultOptional.cast(); // Return the result face as a 'read-only'
             } else if (facing == Direction.DOWN) {
@@ -329,14 +322,14 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
 
         boolean ready = isReady();
         // Need to resolve this value now, otherwise the list will be empty after crafting from matrix
-        NonNullList<ItemStack> remainingStacks = recipeUsed.getRemainingItems(matrixWrapperHandler);
+        NonNullList<ItemStack> remainingStacks = recipeUsed.getRemainingItems(matrixWrapper);
 
         // Craft from buffer
         if (ready) {
             recipeUsed.getIngredients().forEach(i -> {
-                for (int j = 0; j < reversedBufferHandler.getSlots(); j++) {
-                    if (i.test(reversedBufferHandler.getStackInSlot(j))) {
-                        reversedBufferHandler.extractItem(j, 1, false);
+                for (int j = 0; j < reversedBuffer.getSlots(); j++) {
+                    if (i.test(reversedBuffer.getStackInSlot(j))) {
+                        reversedBuffer.extractItem(j, 1, false);
                         break;
                     }
                 }
@@ -344,8 +337,8 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
         }
         // Craft from matrix
         else {
-            for (int i = 0; i < matrixHandler.getSlots(); i++) {
-                matrixHandler.extractItem(i, 1, false);
+            for (int i = 0; i < matrix.getSlots(); i++) {
+                matrix.extractItem(i, 1, false);
             }
         }
 
@@ -353,16 +346,16 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
         IntStream.range(0, remainingStacks.size())
                 .mapToObj(i -> {
                     ItemStack stack = remainingStacks.get(i);
-                    return ready ? stack : matrixHandler.insertItem(i, stack, false);
+                    return ready ? stack : matrix.insertItem(i, stack, false);
                 }) // Insert back the corresponding matrix slot if crafted from there
                 .filter(stack -> !stack.isEmpty())
-                .map(stack -> ItemHandlerHelper.insertItemStacked(reversedBufferHandler, stack, false)) // Insert in buffer
+                .map(stack -> ItemHandlerHelper.insertItemStacked(reversedBuffer, stack, false)) // Insert in buffer
                 .filter(stack -> !stack.isEmpty())
                 .forEach(stack -> {
                     if (player != null) {
                         ItemHandlerHelper.giveItemToPlayer(player, stack); // Give to player if present
                     } else {
-                        ResultHandler.outputStack(this, stack, true); // Output from autocrafter
+                        ItemHandlers.outputStack(this, stack, true); // Output from autocrafter
                     }
                 });
     }

@@ -11,13 +11,13 @@ import net.minecraftforge.items.SlotItemHandler;
 
 public class CraftingAutomatResultSlot extends SlotItemHandler {
 
-    private final CraftingAutomatBlockEntity tile;
+    private final CraftingAutomatBlockEntity automatEntity;
     private final Player player;
     private int amountCrafted;
 
     public CraftingAutomatResultSlot(IItemHandler handler, Player player, CraftingAutomatBlockEntity te, int slotIndex, int xPosition, int yPosition) {
         super(handler, slotIndex, xPosition, yPosition);
-        this.tile = te;
+        this.automatEntity = te;
         this.player = player;
     }
 
@@ -30,7 +30,7 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
     public ItemStack remove(int amount) {
         ItemStack stack = getItem();
         amountCrafted += stack.getCount(); // Wow vanilla actually does this wrong
-        tile.resultOptional.ifPresent(h -> h.setStackInSlot(0, ItemStack.EMPTY));
+        automatEntity.result.setStackInSlot(0, ItemStack.EMPTY);
         return stack;
     }
 
@@ -64,12 +64,12 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
         //Fire Item.onCrafting and Forge crafting hook
         if (amountCrafted > 0) {
             stack.onCraftedBy(player.level, player, amountCrafted);
-            tile.matrixWrapperOptional.ifPresent(h -> ForgeEventFactory.firePlayerCraftingEvent(player, stack, h));
+            ForgeEventFactory.firePlayerCraftingEvent(player, stack, automatEntity.matrixWrapper);
         }
         amountCrafted = 0;
         
         //Unlock recipe
-        Recipe<?> recipe = tile.getRecipeUsed();
+        Recipe<?> recipe = automatEntity.getRecipeUsed();
         if (recipe != null && !recipe.isSpecial()) {
             player.awardRecipes(Lists.newArrayList(recipe));
         }
@@ -79,8 +79,8 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
     public void onTake(Player player, ItemStack stack) {
         checkTakeAchievements(stack);
         ForgeHooks.setCraftingPlayer(player);
-        tile.consumeIngredients(player);
-        tile.updateRecipe();
+        automatEntity.consumeIngredients(player);
+//        automatEntity.updateRecipe();
         ForgeHooks.setCraftingPlayer(null);
     }
 }
