@@ -99,7 +99,7 @@ public class ItemHandlers {
 
     }
 
-    public static class Matrix extends Unsafe {
+    public static class Matrix extends BetterItemStackHandler {
 
         private final CraftingAutomatBlockEntity tile;
 
@@ -111,14 +111,13 @@ public class ItemHandlers {
         @Override
         protected void onContentsChanged(int slot) {
             tile.updateRecipe();
-            tile.setChanged();
         }
 
         // No updateRecipe() in onLoad(): There is no world (and thus no recipemanager) during nbt deserialization :(
         // I fixed this in onLoad() of the TileEntity
     }
 
-    public static class Buffer extends Unsafe implements StackedContentsCompatible {
+    public static class Buffer extends BetterItemStackHandler implements StackedContentsCompatible {
 
         private final CraftingAutomatBlockEntity tile;
 
@@ -129,12 +128,6 @@ public class ItemHandlers {
 
         @Override
         protected void onContentsChanged(int slot) {
-            tile.updateHelper();
-            tile.setChanged();
-        }
-
-        @Override
-        protected void onLoad() {
             tile.updateHelper();
         }
 
@@ -147,12 +140,14 @@ public class ItemHandlers {
         }
     }
 
-    public static class Unsafe extends ItemStackHandler {
+    public static class BetterItemStackHandler extends ItemStackHandler {
 
-        public Unsafe(int size) {
+        public BetterItemStackHandler(int size) {
             super(size);
         }
 
+        // Does not call onContentsChanged. Used for SlotItemHandler.getMaxStackSize() when setting and resetting stack,
+        // Thus not actually changing any contents.
         public void unsafeSetStackInSlot(int slot, @NotNull ItemStack stack) {
             validateSlotIndex(slot);
             this.stacks.set(slot, stack);

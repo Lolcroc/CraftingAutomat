@@ -25,10 +25,6 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
@@ -39,9 +35,6 @@ import java.util.function.Supplier;
 public class CraftingAutomatBlock extends BaseEntityBlock {
 
     public static final String NAME = "autocrafter";
-
-    // Local vars are fast
-    private static final Capability<IItemHandler> ITEM_HANDLER_CAPABILITY = CapabilityManager.get(new CapabilityToken<>(){});
 
     public static final ResourceLocation REGISTRY_NAME = new ResourceLocation(CraftingAutomat.MODID, NAME);
     public static final DirectionProperty FACING = DirectionalBlock.FACING;
@@ -130,11 +123,9 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock()) {
             safeConsume(level, pos, t -> {
-                t.getCapability(ITEM_HANDLER_CAPABILITY).ifPresent(h -> {
-                    for (int i = 0; i < h.getSlots(); i++) {
-                        Containers.dropItemStack(level, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), h.getStackInSlot(i));
-                    }
-                });
+                for (int i = 0; i < t.inventory.getSlots(); i++) {
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), t.inventory.getStackInSlot(i));
+                }
             });
             level.updateNeighbourForOutputSignal(pos, this);
 

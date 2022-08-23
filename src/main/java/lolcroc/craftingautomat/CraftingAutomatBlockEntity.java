@@ -40,7 +40,6 @@ import net.minecraftforge.items.wrapper.CombinedInvWrapper;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
 
 public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvider, RecipeHolder, Clearable {
@@ -185,6 +184,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     public void onLoad() {
         super.onLoad();
         updateRecipe();
+        updateHelper();
     }
 
     @Override
@@ -197,25 +197,25 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     }
 
     public void updateRecipe() {
-        if (this.hasLevel() && !level.isClientSide) {
-            Optional<CraftingRecipe> optional = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, matrixWrapper, level);
-            ItemStack output = ItemStack.EMPTY;
-            CraftingRecipe newRecipe = null;
-
-            if (optional.isPresent()) {
-                CraftingRecipe recipe = optional.get();
-
-                if (recipe.isSpecial() || !level.getGameRules().getBoolean(GameRules.RULE_LIMITED_CRAFTING) || RecipesSavedData.computeIfAbsent(level.getServer()).contains(recipe)) {
-                    output = recipe.assemble(matrixWrapper);
-                    newRecipe = recipe;
-                }
-            }
-
-            recipeUsed = newRecipe;
-            result.setStackInSlot(0, output);
+        if (level != null && !level.isClientSide) {
+            recipeUsed = level.getRecipeManager()
+                    .getRecipeFor(RecipeType.CRAFTING, matrixWrapper, level)
+                    .filter(recipe -> recipe.isSpecial()
+                            || !level.getGameRules().getBoolean(GameRules.RULE_LIMITED_CRAFTING)
+                            || RecipesSavedData.computeIfAbsent(level.getServer()).contains(recipe))
+                    .orElse(null);
             craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
+
+            updateOutput();
+            setChanged();
         }
-//		CraftingAutomat.LOGGER.warn("Did update recipe");
+    }
+
+    public void updateOutput() {
+        if (level != null && !level.isClientSide) {
+            ItemStack output = recipeUsed != null ? recipeUsed.assemble(matrixWrapper) : ItemStack.EMPTY;
+            result.setStackInSlot(0, output);
+        }
     }
 
     // Calls update recipe automatically
@@ -238,9 +238,11 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     }
     // Fired when the buffer changes
     public void updateHelper() {
-        buffer.fillStackedContents(itemHelper);
-        craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
-//		CraftingAutomat.LOGGER.warn("Did update helper");
+        if (level != null && !level.isClientSide) {
+            buffer.fillStackedContents(itemHelper);
+            craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
+            setChanged();
+        }
     }
 
     public int getRecipeCount() {

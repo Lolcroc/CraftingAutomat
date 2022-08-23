@@ -80,7 +80,7 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
         checkTakeAchievements(stack);
         ForgeHooks.setCraftingPlayer(player);
         automatEntity.consumeIngredients(player);
-//        automatEntity.updateRecipe();
+        automatEntity.updateOutput();
         ForgeHooks.setCraftingPlayer(null);
     }
 }

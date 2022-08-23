@@ -32,13 +32,28 @@ public class CraftingAutomatMenu extends AbstractContainerMenu {
         // Crafting matrix
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
-                addSlot(new BetterSlotItemHandler(be.matrix, j + i * 3, 30 + j * 18, 17 + i * 18));
+                addSlot(new BetterSlotItemHandler(be.matrix, j + i * 3, 30 + j * 18, 17 + i * 18) {
+                    // I am fine with this. Even though its called doubly in most cases, it only slightly affects in-GUI
+                    // performance, and that is only 1 per player.
+                    @Override
+                    public void setChanged() {
+                        be.updateRecipe();
+                        super.setChanged();
+                    }
+                });
             }
         }
         
         // Crafting buffer
         for (int l = 0; l < 9; ++l) {
-            addSlot(new BetterSlotItemHandler(be.buffer, l, 8 + l * 18, 84));
+            addSlot(new BetterSlotItemHandler(be.buffer, l, 8 + l * 18, 84) {
+                // See above comment.
+                @Override
+                public void setChanged() {
+                    be.updateHelper();
+                    super.setChanged();
+                }
+            });
         }
 
         // Player inventory
@@ -150,9 +165,16 @@ public class CraftingAutomatMenu extends AbstractContainerMenu {
         return itemstack;
     }
 
+    /*
+    Prevents from calling onContentsChanged (and, by extension, updateRecipe() or updateHelper()) when dragging items.
+    This was causing major FPS drops, see https://github.com/Lolcroc/CraftingAutomat/issues/19
+
+    The fix calls an 'unsafe' setStackInSlot that doesn't call onContentsChanged, because this item juggling is only
+    temporary for the sake of simulation.
+     */
     private static class BetterSlotItemHandler extends SlotItemHandler {
 
-        public BetterSlotItemHandler(ItemHandlers.Unsafe itemHandler, int index, int xPosition, int yPosition) {
+        public BetterSlotItemHandler(ItemHandlers.BetterItemStackHandler itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
@@ -163,7 +185,7 @@ public class CraftingAutomatMenu extends AbstractContainerMenu {
             maxAdd.setCount(maxInput);
 
             int index = getSlotIndex();
-            ItemHandlers.Unsafe handler = getItemHandler();
+            ItemHandlers.BetterItemStackHandler handler = getItemHandler();
             ItemStack currentStack = handler.getStackInSlot(index);
 
             handler.unsafeSetStackInSlot(index, ItemStack.EMPTY);
@@ -176,8 +198,8 @@ public class CraftingAutomatMenu extends AbstractContainerMenu {
         }
 
         @Override
-        public ItemHandlers.Unsafe getItemHandler() {
-            return (ItemHandlers.Unsafe) super.getItemHandler();
+        public ItemHandlers.BetterItemStackHandler getItemHandler() {
+            return (ItemHandlers.BetterItemStackHandler) super.getItemHandler();
         }
     }
 
