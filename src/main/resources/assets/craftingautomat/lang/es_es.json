@@ -1,0 +1,7 @@
+{
+    "block.craftingautomat.autocrafter": "Mesa de Trabajo Automática",
+    "container.craftingautomat:autocrafter": "Trabajando",
+    "container.craftingautomat:autocrafter.flag.ready": "Auto-trabajo terminado",
+    "container.craftingautomat:autocrafter.flag.missing": "Faltan ingredientes",
+    "container.craftingautomat:autocrafter.flag.invalid": "Auto-trabajo no válido"
+}
