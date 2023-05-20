@@ -3,13 +3,14 @@ package lolcroc.craftingautomat;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -40,7 +41,7 @@ public class CraftingAutomat
     public static final RegistryObject<Block> AUTOCRAFTER_BLOCK = BLOCKS.register(NAME, CraftingAutomatBlock::new);
     public static final RegistryObject<BlockEntityType<CraftingAutomatBlockEntity>> AUTOCRAFTER_BLOCK_ENTITY = BLOCK_ENTITIES.register(NAME, () -> BlockEntityType.Builder.of(CraftingAutomatBlockEntity::new, AUTOCRAFTER_BLOCK.get()).build(null));
     public static final RegistryObject<MenuType<CraftingAutomatContainer>> AUTOCRAFTER_MENU = MENUS.register(NAME, () -> IForgeMenuType.create(CraftingAutomatContainer::new));
-    public static final RegistryObject<Item> AUTOCRAFTER_ITEM = ITEMS.register(NAME, () -> new BlockItem(AUTOCRAFTER_BLOCK.get(), new Item.Properties().tab(CreativeModeTab.TAB_REDSTONE)));
+    public static final RegistryObject<Item> AUTOCRAFTER_ITEM = ITEMS.register(NAME, () -> new BlockItem(AUTOCRAFTER_BLOCK.get(), new Item.Properties()));
     
     public CraftingAutomat() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CraftingAutomatConfig.COMMON_CONFIG);
@@ -52,6 +53,13 @@ public class CraftingAutomat
         BLOCK_ENTITIES.register(eventBus);
         MENUS.register(eventBus);
         ITEMS.register(eventBus);
+
+        eventBus.addListener(this::addAutomatToCreativeTab);
+    }
+
+    private void addAutomatToCreativeTab(CreativeModeTabEvent.BuildContents event) {
+        if (event.getTab().equals(CreativeModeTabs.REDSTONE_BLOCKS))
+            event.accept(AUTOCRAFTER_ITEM::get);
     }
     
     @SubscribeEvent
