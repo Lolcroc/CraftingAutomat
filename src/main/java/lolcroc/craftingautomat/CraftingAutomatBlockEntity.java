@@ -169,7 +169,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
                 recipeUsed = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, w, level)
                         .filter(r -> setRecipeUsed(level, null, r)); // Set new recipe or null if missing/can't craft
                 resultHandler.ifPresent(h -> h.setStackInSlot(0, recipeUsed.map(r ->
-                        r.assemble(w)).orElse(ItemStack.EMPTY))); // Update result slot
+                        r.assemble(w, level.registryAccess())).orElse(ItemStack.EMPTY))); // Update result slot
             });
             craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
         }

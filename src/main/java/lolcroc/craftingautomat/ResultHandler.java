@@ -14,7 +14,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
@@ -79,7 +78,7 @@ public class ResultHandler extends ItemStackHandler {
         else {
             // Only allow hopper/chest minecarts for now
             Iterator<Entity> invents = level.getEntities((Entity) null, new AABB(targetpos), e ->
-                    e.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, outputface.getOpposite()).isPresent()
+                    e.getCapability(ITEM_HANDLER_CAPABILITY, outputface.getOpposite()).isPresent()
                             && e.isAlive() && (e instanceof AbstractMinecartContainer)).iterator();
 
             while (invents.hasNext() && !stack.isEmpty()) {
