@@ -200,7 +200,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     // Without player check and without set method
     @Override
     public boolean setRecipeUsed(Level level, @Nullable ServerPlayer player, Recipe<?> recipe) {
-        return !level.getGameRules().getBoolean(GameRules.RULE_LIMITED_CRAFTING) || recipe.isSpecial();
+        return true;
     }
 
     // Fired when the buffer changes
