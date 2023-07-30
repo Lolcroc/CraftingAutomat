@@ -63,7 +63,7 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
     protected void checkTakeAchievements(ItemStack stack) {
         //Fire Item.onCrafting and Forge crafting hook
         if (amountCrafted > 0) {
-            stack.onCraftedBy(player.level, player, amountCrafted);
+            stack.onCraftedBy(player.level(), player, amountCrafted);
             tile.matrixWrapper.ifPresent(h -> ForgeEventFactory.firePlayerCraftingEvent(player, stack, h));
         }
         amountCrafted = 0;

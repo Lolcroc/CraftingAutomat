@@ -23,7 +23,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
@@ -50,8 +51,9 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
 
     public CraftingAutomatBlock() {
         // RedstoneConductor : Prevents incoming redstone signals to propagate to adjacent blocks
-        super(BlockBehaviour.Properties.of(Material.STONE).sound(SoundType.STONE)
-                .strength(3.5F).isRedstoneConductor((state, getter, pos) -> false));
+        super(BlockBehaviour.Properties.of().mapColor(MapColor.LAPIS).instrument(NoteBlockInstrument.BASS)
+                .requiresCorrectToolForDrops().sound(SoundType.WOOD).strength(3.5F)
+                .isRedstoneConductor((state, getter, pos) -> false));
         this.registerDefaultState(stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(ACTIVE, Boolean.FALSE)

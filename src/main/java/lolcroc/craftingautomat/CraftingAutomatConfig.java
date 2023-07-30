@@ -67,7 +67,7 @@ public class CraftingAutomatConfig {
     // Check the logical side for sending a packet from server (which can be physical CLIENT/SERVER)
     @SubscribeEvent
     public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        syncTickSettings(!event.getEntity().level.isClientSide);
+        syncTickSettings(!event.getEntity().level().isClientSide);
     }
 
     // Fires on client and server dist

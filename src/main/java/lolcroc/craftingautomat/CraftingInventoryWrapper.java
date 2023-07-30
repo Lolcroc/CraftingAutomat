@@ -1,17 +1,20 @@
 package lolcroc.craftingautomat;
 
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
 import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.stream.IntStream;
 
-public class CraftingInventoryWrapper extends CraftingContainer {
+public class CraftingInventoryWrapper implements CraftingContainer {
 
     private final IItemHandlerModifiable inv;
 
     public CraftingInventoryWrapper(IItemHandlerModifiable handler) {
-        super(null, 3, 3);
         this.inv = handler;
     }
 
@@ -53,9 +56,35 @@ public class CraftingInventoryWrapper extends CraftingContainer {
     }
 
     @Override
+    public void setChanged() {}
+
+    @Override
+    public boolean stillValid(Player p_18946_) {
+        return true;
+    }
+
+    @Override
     public void clearContent() {
         for(int i = 0; i < inv.getSlots(); i++) {
             inv.setStackInSlot(i, ItemStack.EMPTY);
         }
     }
+
+    @Override
+    public int getWidth() {
+        return 3;
+    }
+
+    @Override
+    public int getHeight() {
+        return 3;
+    }
+
+    @Override
+    public List<ItemStack> getItems() {
+        return List.copyOf(IntStream.range(0, inv.getSlots()).mapToObj(inv::getStackInSlot).toList());
+    }
+
+    @Override
+    public void fillStackedContents(StackedContents p_40281_) {}
 }

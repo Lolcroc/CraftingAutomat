@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.event.CreativeModeTabEvent;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
@@ -57,8 +57,8 @@ public class CraftingAutomat
         eventBus.addListener(this::addAutomatToCreativeTab);
     }
 
-    private void addAutomatToCreativeTab(CreativeModeTabEvent.BuildContents event) {
-        if (event.getTab().equals(CreativeModeTabs.REDSTONE_BLOCKS))
+    private void addAutomatToCreativeTab(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.REDSTONE_BLOCKS)
             event.accept(AUTOCRAFTER_ITEM::get);
     }
     

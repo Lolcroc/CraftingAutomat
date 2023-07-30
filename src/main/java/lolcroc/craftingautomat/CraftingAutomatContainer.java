@@ -103,7 +103,7 @@ public class CraftingAutomatContainer extends AbstractContainerMenu {
             itemstack = itemstack1.copy();
 
             if (index == 0) {
-                itemstack1.getItem().onCraftedBy(itemstack1, player.level, player);
+                itemstack1.getItem().onCraftedBy(itemstack1, player.level(), player);
 
                 // Merge result slot to player inv
                 if (!moveItemStackTo(itemstack1, 19, 55, true)) {

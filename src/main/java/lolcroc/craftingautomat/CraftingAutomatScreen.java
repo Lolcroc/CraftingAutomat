@@ -1,9 +1,7 @@
 package lolcroc.craftingautomat;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -49,33 +47,31 @@ public class CraftingAutomatScreen extends AbstractContainerScreen<CraftingAutom
 
     // Background
     @Override
-    protected void renderBg(PoseStack stack, float partialTicks, int mouseX, int mouseY) {
-        renderBackground(stack); // Do I need this?
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+    protected void renderBg(GuiGraphics gfx, float partialTicks, int mouseX, int mouseY) {
+        renderBackground(gfx); // Do I need this?
+
         int i = leftPos;
         int j = topPos;
-        blit(stack, i, j, 0, 0, imageWidth, imageHeight);
+        gfx.blit(TEXTURE, i, j, 0, 0, imageWidth, imageHeight);
         
         int w = getProgressWidth();
-        blit(stack, i + 89, j + 34, 176, 0, w + 1, 16);
+        gfx.blit(TEXTURE, i + 89, j + 34, 176, 0, w + 1, 16);
 
         // Draw crafting flag marker and tooltip
         CraftingAutomatBlockEntity.CraftingFlag flag = menu.getCraftingFlag();
         if (flag != CraftingAutomatBlockEntity.CraftingFlag.NONE) {
-            blit(stack, i + 142, j + 26, 176 + 8 * (flag.getIndex() - 1), 17, 8, 8);
+            gfx.blit(TEXTURE, i + 142, j + 26, 176 + 8 * (flag.getIndex() - 1), 17, 8, 8);
 
             if (isHovering(142, 26, 8, 8, mouseX, mouseY)) {
-                renderTooltip(stack, flag.getDisplayTags(), Optional.empty(), mouseX, mouseY);
+                gfx.renderTooltip(font, flag.getDisplayTags(), Optional.empty(), mouseX, mouseY);
             }
         }
     }
 
     @Override
-    public void render(PoseStack stack, int mouseX, int mouseY, float partialTicks) {
-        super.render(stack, mouseX, mouseY, partialTicks);
-        renderTooltip(stack, mouseX, mouseY); // Hovered tooltip
+    public void render(GuiGraphics gfx, int mouseX, int mouseY, float partialTicks) {
+        super.render(gfx, mouseX, mouseY, partialTicks);
+        renderTooltip(gfx, mouseX, mouseY); // Hovered tooltip
     }
 
 }
