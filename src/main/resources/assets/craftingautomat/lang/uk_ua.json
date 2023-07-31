@@ -1,0 +1,7 @@
+{
+    "block.craftingautomat.autocrafter": "Автовиготовлювач",
+    "container.craftingautomat:autocrafter": "Майстрування",
+    "container.craftingautomat:autocrafter.flag.ready": "Автовиготовлення готово",
+    "container.craftingautomat:autocrafter.flag.missing": "Відсутні інгредієнти",
+    "container.craftingautomat:autocrafter.flag.invalid": "Автовиготовлення не підтримується"
+}
