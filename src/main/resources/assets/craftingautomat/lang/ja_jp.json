@@ -1,0 +1,7 @@
+{
+    "block.craftingautomat.autocrafter": "自動クラフトテーブル",
+    "container.craftingautomat:autocrafter": "クラフト中",
+    "container.craftingautomat:autocrafter.flag.ready": "自動クラフト可能",
+    "container.craftingautomat:autocrafter.flag.missing": "素材が足りません",
+    "container.craftingautomat:autocrafter.flag.invalid": "自動クラフトできないアイテムです。"
+}
