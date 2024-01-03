@@ -18,10 +18,10 @@ import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.inventory.DataSlot;
-import net.minecraft.world.inventory.RecipeHolder;
+import net.minecraft.world.inventory.RecipeCraftingHolder;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
@@ -45,13 +45,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvider, RecipeHolder, Clearable {
+public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvider, RecipeCraftingHolder, Clearable {
 
     protected Component customName;
     protected LockCode lock = LockCode.NO_LOCK;
 
     protected StackedContents itemHelper = new StackedContents();
-    protected Optional<CraftingRecipe> recipeUsed = Optional.empty();
+    protected Optional<RecipeHolder<CraftingRecipe>> recipeUsed = Optional.empty();
     protected int ticksActive;
     DataSlot ticksHolder = new DataSlot() {
         @Override
@@ -89,8 +89,8 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
             return VALUES[idx];
         }
 
-        public static CraftingFlag getNewFlag(Optional<CraftingRecipe> recipe, StackedContents helper) {
-            return recipe.map(r -> r.isSpecial() ? INVALID :
+        public static CraftingFlag getNewFlag(Optional<RecipeHolder<CraftingRecipe>> recipe, StackedContents helper) {
+            return recipe.map(r -> r.value().isSpecial() ? INVALID :
                     ((helper.getBiggestCraftableStack(r, null) > 0) ? READY : MISSING)).orElse(NONE);
         }
 
@@ -168,7 +168,7 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
                 recipeUsed = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, w, level)
                         .filter(r -> setRecipeUsed(level, null, r)); // Set new recipe or null if missing/can't craft
                 resultHandler.ifPresent(h -> h.setStackInSlot(0, recipeUsed.map(r ->
-                        r.assemble(w, level.registryAccess())).orElse(ItemStack.EMPTY))); // Update result slot
+                        r.value().assemble(w, level.registryAccess())).orElse(ItemStack.EMPTY))); // Update result slot
             });
             craftingFlag = CraftingFlag.getNewFlag(recipeUsed, itemHelper);
         }
@@ -186,19 +186,19 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
     }
 
     @Override
-    public void setRecipeUsed(@Nullable Recipe<?> recipe) {
-        recipeUsed = Optional.ofNullable((CraftingRecipe) recipe);
+    public void setRecipeUsed(@Nullable RecipeHolder<?> recipe) {
+        recipeUsed = Optional.ofNullable((RecipeHolder<CraftingRecipe>) recipe);
     }
 
     @Nullable
     @Override
-    public Recipe<?> getRecipeUsed() {
+    public RecipeHolder<?> getRecipeUsed() {
         return recipeUsed.orElse(null);
     }
 
     // Without player check and without set method
     @Override
-    public boolean setRecipeUsed(Level level, @Nullable ServerPlayer player, Recipe<?> recipe) {
+    public boolean setRecipeUsed(Level level, @Nullable ServerPlayer player, RecipeHolder<?> recipe) {
         return true;
     }
 
@@ -298,13 +298,13 @@ public class CraftingAutomatBlockEntity extends BlockEntity implements MenuProvi
         recipeUsed.ifPresent(recipe -> {
             boolean ready = isReady();
             // Need to resolve this value now, otherwise the list will be empty after crafting from matrix
-            NonNullList<ItemStack> remainingStacks = matrixWrapper.map(recipe::getRemainingItems)
+            NonNullList<ItemStack> remainingStacks = matrixWrapper.map(recipe.value()::getRemainingItems)
                     .orElse(NonNullList.withSize(0, ItemStack.EMPTY));
 
             // Craft from buffer
             if (ready) {
                 reversedBufferHandler.ifPresent(h -> {
-                    recipe.getIngredients().forEach(i -> {
+                    recipe.value().getIngredients().forEach(i -> {
                         for (int j = 0; j < h.getSlots(); j++) {
                             if (i.test(h.getStackInSlot(j))) {
                                 h.extractItem(j, 1, false);

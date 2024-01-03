@@ -48,7 +48,7 @@ public class CraftingAutomatScreen extends AbstractContainerScreen<CraftingAutom
     // Background
     @Override
     protected void renderBg(GuiGraphics gfx, float partialTicks, int mouseX, int mouseY) {
-        renderBackground(gfx); // Do I need this?
+        // renderBackground(gfx); removed
 
         int i = leftPos;
         int j = topPos;

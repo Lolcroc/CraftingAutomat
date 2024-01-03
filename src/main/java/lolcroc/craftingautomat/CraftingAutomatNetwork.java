@@ -4,38 +4,32 @@ import com.google.common.collect.Lists;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.event.network.CustomPayloadEvent;
+import net.minecraftforge.network.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 public class CraftingAutomatNetwork {
 
-    private static int messageID;
-
-    private static final String PROTOCOL_VERSION = "1";
-    private static final ResourceLocation REGISTRY_NAME = new ResourceLocation(CraftingAutomat.MODID, "network");
-
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            REGISTRY_NAME, () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals, PROTOCOL_VERSION::equals
-    );
-
-    public static int nextID() {
-        return messageID++;
-    }
+    private static final ResourceLocation CHANNEL_NAME = new ResourceLocation(CraftingAutomat.MODID, "network");
+    public static final SimpleChannel CHANNEL = ChannelBuilder
+            .named(CHANNEL_NAME)
+            .networkProtocolVersion(1)
+            .acceptedVersions(Channel.VersionTest.exact(1))
+            .simpleChannel();
 
     public static void registerMessages() {
-        INSTANCE.registerMessage(nextID(), SOverrideConfigPacket.class,
-                SOverrideConfigPacket::toBytes, SOverrideConfigPacket::new, SOverrideConfigPacket::handle);
+        CHANNEL.messageBuilder(SOverrideConfigPacket.class, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(SOverrideConfigPacket::toBytes)
+                .decoder(SOverrideConfigPacket::new)
+                .consumerMainThread(SOverrideConfigPacket::handle)
+                .add();
     }
 
-    public static void overrideClientConfigs(ForgeConfigSpec.IntValue ... vals) {
-        INSTANCE.send(PacketDistributor.ALL.noArg(), new SOverrideConfigPacket(vals));
+    public static void overrideClientConfigs(ForgeConfigSpec.IntValue... vals) {
+        CHANNEL.send(new SOverrideConfigPacket(vals), PacketDistributor.ALL.noArg());
     }
 
     private static class SOverrideConfigPacket {
@@ -74,9 +68,8 @@ public class CraftingAutomatNetwork {
             }
         }
 
-        public void handle(Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> CraftingAutomatConfig.Client.putAll(values));
-            ctx.get().setPacketHandled(true);
+        public void handle(CustomPayloadEvent.Context ctx) {
+            CraftingAutomatConfig.Client.putAll(values);
         }
     }
 }

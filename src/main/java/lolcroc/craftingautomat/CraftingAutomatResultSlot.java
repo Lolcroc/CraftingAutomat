@@ -3,7 +3,7 @@ package lolcroc.craftingautomat;
 import com.google.common.collect.Lists;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.items.IItemHandler;
@@ -69,8 +69,8 @@ public class CraftingAutomatResultSlot extends SlotItemHandler {
         amountCrafted = 0;
         
         //Unlock recipe
-        Recipe<?> recipe = tile.getRecipeUsed();
-        if (recipe != null && !recipe.isSpecial()) {
+        RecipeHolder<?> recipe = tile.getRecipeUsed();
+        if (recipe != null && !recipe.value().isSpecial()) {
             player.awardRecipes(Lists.newArrayList(recipe));
         }
     }

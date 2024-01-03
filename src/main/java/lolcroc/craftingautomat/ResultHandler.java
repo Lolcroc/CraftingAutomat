@@ -2,7 +2,6 @@ package lolcroc.craftingautomat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.PositionImpl;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.vehicle.AbstractMinecartContainer;
@@ -10,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
@@ -49,7 +49,7 @@ public class ResultHandler extends ItemStackHandler {
         }
 
         ItemStack itemstack = stack.split(stack.getCount()); //is empty afterwards
-        DefaultDispenseItemBehavior.spawnItem(level, itemstack, 6, side, new PositionImpl(x, y, z));
+        DefaultDispenseItemBehavior.spawnItem(level, itemstack, 6, side, new Vec3(x, y, z));
 
         if (!silent) {
             level.levelEvent(1000, pos, 0); // Play dispense sound

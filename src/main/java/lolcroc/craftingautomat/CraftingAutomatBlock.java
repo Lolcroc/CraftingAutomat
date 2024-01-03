@@ -30,7 +30,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
@@ -98,7 +97,9 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
             safeConsume(level, pos, t -> {
-                NetworkHooks.openScreen((ServerPlayer) player, t, pos);
+//                NetworkHooks.openScreen((ServerPlayer) player, t, pos);
+//                player.openMenu(t);
+                player.openMenu(state.getMenuProvider(level, pos));
                 player.awardStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
             });
         }
