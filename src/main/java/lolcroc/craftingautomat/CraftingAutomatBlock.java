@@ -8,6 +8,7 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -99,7 +100,7 @@ public class CraftingAutomatBlock extends BaseEntityBlock {
             safeConsume(level, pos, t -> {
 //                NetworkHooks.openScreen((ServerPlayer) player, t, pos);
 //                player.openMenu(t);
-                player.openMenu(state.getMenuProvider(level, pos));
+                ((ServerPlayer) player).openMenu(state.getMenuProvider(level, pos), pos);
                 player.awardStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
             });
         }

@@ -17,6 +17,7 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
@@ -63,8 +64,14 @@ public class CraftingAutomat
     }
     
     @SubscribeEvent
+    public static void setup(FMLClientSetupEvent event) {
+        event.enqueueWork(() ->
+                MenuScreens.register(AUTOCRAFTER_MENU.get(), CraftingAutomatScreen::new)
+        );
+    }
+
+    @SubscribeEvent
     public static void setup(FMLCommonSetupEvent event) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> MenuScreens.register(AUTOCRAFTER_MENU.get(), CraftingAutomatScreen::new));
-        CraftingAutomatNetwork.registerMessages();
+        event.enqueueWork(CraftingAutomatNetwork::registerMessages);
     }
 }
